@@ -7,7 +7,7 @@ target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
-!**/src/main/java/com/yt/aiagent/demo/
+**/src/main/java/com/yt/aiagent/demo/
 ### STS ###
 .apt_generated
 .classpath

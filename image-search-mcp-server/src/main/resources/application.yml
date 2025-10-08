@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: image-search-mcp-server
+  profiles:
+    active: sse,local
+server:
+  port: 8127
+
+logging:
+  level:
+    org:
+      springframework:
+        boot:
+          autoconfigure:
+            condition: ERROR

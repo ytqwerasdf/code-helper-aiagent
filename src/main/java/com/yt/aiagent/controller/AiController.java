@@ -1,0 +1,85 @@
+package com.yt.aiagent.controller;
+
+import com.yt.aiagent.app.CodeHelperApp;
+import jakarta.annotation.Resource;
+import lombok.Generated;
+import org.springframework.http.MediaType;
+import org.springframework.http.codec.ServerSentEvent;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import reactor.core.publisher.Flux;
+
+import java.io.IOException;
+
+@RestController
+@RequestMapping("/ai")
+public class AiController {
+
+    @Resource
+    private CodeHelperApp codeHelperApp;
+
+    /**
+     * 同步调用编程助手应用
+     *
+     * @param message
+     * @param chatId
+     * @return
+     */
+    @GetMapping("/code_helper/chat/sync")
+    public String doChatWithCodeAppSync(String message,String chatId){
+        return codeHelperApp.doChat(message,chatId);
+    }
+
+    /**
+     * SSE流式调用编程助手应用
+     *
+     * @param message
+     * @param chatId
+     * @return
+     */
+    @GetMapping(value = "/code_helper/chat/sse",produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<String> doChatWithCodeAppSSE(String message, String chatId){
+        return codeHelperApp.doChatByStream( message,chatId);
+    }
+
+    /**
+     * SSE流式调用编程助手应用
+     *
+     * @param message
+     * @param chatId
+     * @return
+     */
+    @GetMapping(value = "/code_helper/chat/server_sent_event")
+    public Flux<ServerSentEvent<String>> doChatWithCodeAppServerSentEvent(String message, String chatId){
+        return codeHelperApp.doChatByStream( message,chatId)
+                .map(chunk -> ServerSentEvent.<String>builder()
+                        .data(chunk)
+                        .build());
+    }
+
+    /**
+     * SSE流式调用编程助手应用
+     *
+     * @param message
+     * @param chatId
+     * @return
+     */
+    @GetMapping(value = "/code_helper/chat/sse_emitter")
+    public SseEmitter doChatWithCodeAppSseEmitter(String message, String chatId){
+        SseEmitter sseEmitter = new SseEmitter(180000L);//超时时间3分钟
+
+        //获取Flux响应式数据流并且直接通过订阅推送给前端
+        codeHelperApp.doChatByStream( message,chatId)
+                 .subscribe(chunk -> {
+                     try {
+                         sseEmitter.send(chunk);
+                     } catch (IOException e) {
+                         sseEmitter.completeWithError(e);
+                     }
+                 },sseEmitter::completeWithError,sseEmitter::complete);
+        return sseEmitter;
+    }
+
+}
