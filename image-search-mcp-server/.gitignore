@@ -1,14 +1,9 @@
-### CUSTOM ###
-application-local.yml
-mcp-servers.json
-tmp
-
 HELP.md
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
-**/src/main/java/com/yt/aiagent/demo/
+application-local.yml
 ### STS ###
 .apt_generated
 .classpath
