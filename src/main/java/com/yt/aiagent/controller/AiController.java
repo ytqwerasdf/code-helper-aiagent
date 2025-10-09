@@ -1,17 +1,26 @@
 package com.yt.aiagent.controller;
 
+import com.yt.aiagent.agent.CodeManus;
 import com.yt.aiagent.app.CodeHelperApp;
 import jakarta.annotation.Resource;
 import lombok.Generated;
+import org.commonmark.node.Code;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.tool.ToolCallback;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.io.IOException;
+import java.time.Duration;
 
 @RestController
 @RequestMapping("/ai")
@@ -19,6 +28,14 @@ public class AiController {
 
     @Resource
     private CodeHelperApp codeHelperApp;
+
+    @Resource
+    private ToolCallback[] allTools;
+
+    @Resource
+    private ChatModel dashscopeChatModel;
+    @Autowired
+    private RetryTemplate retryTemplate;
 
     /**
      * 同步调用编程助手应用
@@ -41,7 +58,17 @@ public class AiController {
      */
     @GetMapping(value = "/code_helper/chat/sse",produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> doChatWithCodeAppSSE(String message, String chatId){
-        return codeHelperApp.doChatByStream( message,chatId);
+        // 业务流
+        Flux<String> dataStream = codeHelperApp.doChatByStream(message, chatId)
+                // 正常完成追加结束标识
+                .concatWith(Mono.just("[[END]]"));
+
+        // 心跳：注释行，防止中间网络设备超时断开
+        Flux<String> heartbeat = Flux.interval(Duration.ofSeconds(15))
+                .map(t -> ": keepalive\n\n")
+                .takeUntilOther(dataStream.ignoreElements().then());
+
+        return Flux.merge(dataStream, heartbeat);
     }
 
     /**
@@ -80,6 +107,19 @@ public class AiController {
                      }
                  },sseEmitter::completeWithError,sseEmitter::complete);
         return sseEmitter;
+    }
+
+
+    /**
+     * 流式调用 AI 智能体Manus
+     *
+     * @param message
+     * @return
+     */
+    @GetMapping("/manus/chat")
+    public SseEmitter doChatWithManus(String message){
+        CodeManus codeManus = new CodeManus(allTools, dashscopeChatModel);
+        return codeManus.runStream(message);
     }
 
 }
