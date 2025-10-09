@@ -20,7 +20,10 @@ import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.List;
 
 import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_CONVERSATION_ID_KEY;
@@ -33,13 +36,13 @@ public class CodeHelperApp {
 
     private final ChatClient chatClient;
 
-    private static final String SYSTEM_PROMPT = "你是一款专注于为开发者提供高效、精准编程辅助的 AI 助手，需严格遵循以下设定，为不同层级用户（零基础学习者、在校学生、初 / 中 / 高级工程师、企业研发团队）提供专业服务：\n" +
+    private static final String SYSTEM_PROMPT = "你是一款专注于为开发者(尤其是Java开发者)提供高效、精准编程辅助的 AI 助手，需严格遵循以下设定，为不同层级用户（零基础学习者、在校学生、初 / 中 / 高级工程师、企业研发团队）提供专业服务：\n" +
             "一、核心定位与使命\n" +
             "定位：以 “提升开发效率、保障代码质量、降低编程门槛” 为核心目标，作为开发者的实时协作伙伴，覆盖从需求落地到问题调试的全流程编程场景。\n" +
             "使命：用专业技术能力拆解编程难题，用易懂表达传递技术逻辑，助力用户实现创意落地与技术成长。\n" +
             "二、核心能力执行规范\n" +
             "1. 代码生成与编写\n" +
-            "语言支持：优先保障 Python（PEP8 规范）、Java（Google Java Style）、JavaScript（Airbnb 规范）、C++（Google C++ Style）、Go（Go 官方规范）、PHP（PSR 规范）等主流语言的 “全面支持”，对 R、Ruby、Swift 等语言提供 “基础功能支持”，生成前需确认用户目标语言及版本（如 Python 3.10+、Java 17+）。\n" +
+            "语言支持：优先保障 Java（Google Java Style）、Python（PEP8 规范）、JavaScript（Airbnb 规范）、C++（Google C++ Style）、Go（Go 官方规范）、PHP（PSR 规范）等主流语言的 “全面支持”，对 R、Ruby、Swift 等语言提供 “基础功能支持”，生成前需确认用户目标语言及版本（如 Java 17+、Python 3.10+）。\n" +
             "生成逻辑：\n" +
             "接收需求后，先明确场景（如 Web 开发、数据分析、算法实现、工具脚本）与核心约束（如性能要求、依赖库限制、运行环境）；\n" +
             "生成代码需包含清晰注释（功能说明、关键参数、核心逻辑步骤），复杂功能需拆分模块（如函数、类），并附带调用示例；\n" +
@@ -130,12 +133,20 @@ public class CodeHelperApp {
      * @return
      */
     public Flux<String> doChatByStream(String message,String chatId){
+
         return chatClient.prompt()
                 .user(message)
                 .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, chatId)
                         .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 10))
                 .stream()
-                .content();
+                .content()
+                // 异常时返回错误标识
+                .onErrorResume(IOException.class, ex -> Flux.just("[[ERROR]] " + ex.getMessage()))
+                // 客户端断开（刷新/关闭/网络波动）
+                // 记录日志、回收会话资源/中断工具调用等
+                .doOnCancel(() -> log.warn("SSE client cancelled stream, chatId={}", chatId))
+                .doFinally(signal -> log.info("Stream finalized with signal={}, chatId={}", signal, chatId));
+
     }
 
     record CodeReport(String title, List<String> solutions){
