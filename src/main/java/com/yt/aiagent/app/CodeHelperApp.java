@@ -3,6 +3,7 @@ package com.yt.aiagent.app;
 import com.yt.aiagent.advisor.MyLoggerAdvisor;
 import com.yt.aiagent.advisor.ReReadingAdvisor;
 import com.yt.aiagent.chatmemory.FileBasedChatMemory;
+import com.yt.aiagent.constant.ConversationSign;
 import com.yt.aiagent.rag.CodeHelperRagCustomAdvisorFactory;
 import com.yt.aiagent.rag.QueryRewriter;
 import jakarta.annotation.Resource;
@@ -146,7 +147,7 @@ public class CodeHelperApp {
                 .stream()
                 .content()
                 // 异常时返回错误标识
-                .onErrorResume(IOException.class, ex -> Flux.just("[[ERROR]] " + ex.getMessage()))
+                .onErrorResume(IOException.class, ex -> Flux.just(ConversationSign.CONVERSATION_END + ex.getMessage()))
                 // 客户端断开（刷新/关闭/网络波动）
                 // 记录日志、回收会话资源/中断工具调用等
                 .doOnCancel(() -> log.warn("SSE client cancelled stream, chatId={}", chatId))

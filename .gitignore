@@ -1,6 +1,7 @@
 ### CUSTOM ###
 application-local.yml
 mcp-servers.json
+mcp-servers-abandoned.json
 tmp
 node_modules
 HELP.md
