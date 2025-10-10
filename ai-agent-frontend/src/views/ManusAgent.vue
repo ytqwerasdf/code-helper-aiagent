@@ -131,20 +131,14 @@ export default {
      * @param {string} data - 接收到的数据
      */
     handleSSEMessage(data) {
-      // 如果最后一条消息是AI消息，则追加内容
-      if (this.messages.length > 0 && this.messages[this.messages.length - 1].type === 'ai') {
-        const target = this.messages[this.messages.length - 1]
-        target.content += data
-        target.html = renderMarkdown(target.content)
-      } else {
-        // 否则创建新的AI消息
-        const aiMsg = {
-          type: 'ai',
-          content: data,
-          html: renderMarkdown(data)
-        }
-        this.messages.push(aiMsg)
+      // ManusAgent: 每个SSE消息都创建独立的对话气泡
+      // 这样每个AI处理步骤的结果都会显示为单独的消息
+      const aiMsg = {
+        type: 'ai',
+        content: data,
+        html: renderMarkdown(data)
       }
+      this.messages.push(aiMsg)
       
       // 滚动到底部
       this.$nextTick(() => {

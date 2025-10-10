@@ -36,7 +36,9 @@ export class ApiService {
   static createCodeHelperSSE(message, chatId, onMessage, onError, onComplete) {
     const url = `${api.defaults.baseURL}/ai/code_helper/chat/sse?message=${encodeURIComponent(message)}&chatId=${encodeURIComponent(chatId)}&_t=${Date.now()}`
     
-    const eventSource = new EventSource(url)
+    const eventSource = new EventSource(url, {
+      withCredentials: false
+    })
     const connectionId = `code_helper_${chatId}_${Date.now()}`
     
     // 存储连接信息，用于取消操作
@@ -48,7 +50,20 @@ export class ApiService {
     
     eventSource.onmessage = (event) => {
       try {
-        const data = event.data
+        let data = event.data
+        // 处理字符编码问题，确保正确显示中文
+        if (typeof data === 'string') {
+          // 检查是否包含乱码，如果是则尝试修复
+          if (data.includes('æ') || data.includes('è') || data.includes('å')) {
+            try {
+              // 使用更简单的方法处理编码问题
+              data = unescape(encodeURIComponent(data))
+            } catch (e) {
+              console.warn('字符解码失败，使用原始数据:', e)
+            }
+          }
+        }
+        
         if (data === '[DONE]' || data === '[[END]]') {
           this.activeConnections.delete(connectionId)
           eventSource.close()
@@ -100,7 +115,9 @@ export class ApiService {
   static createManusSSE(message, onMessage, onError, onComplete) {
     const url = `${api.defaults.baseURL}/ai/manus/chat?message=${encodeURIComponent(message)}&_t=${Date.now()}`
     
-    const eventSource = new EventSource(url)
+    const eventSource = new EventSource(url, {
+      withCredentials: false
+    })
     const connectionId = `manus_${Date.now()}`
     
     // 存储连接信息，用于取消操作
@@ -112,7 +129,20 @@ export class ApiService {
     
     eventSource.onmessage = (event) => {
       try {
-        const data = event.data
+        let data = event.data
+        // 处理字符编码问题，确保正确显示中文
+        if (typeof data === 'string') {
+          // 检查是否包含乱码，如果是则尝试修复
+          if (data.includes('æ') || data.includes('è') || data.includes('å')) {
+            try {
+              // 使用更简单的方法处理编码问题
+              data = unescape(encodeURIComponent(data))
+            } catch (e) {
+              console.warn('字符解码失败，使用原始数据:', e)
+            }
+          }
+        }
+        
         if (data === '[DONE]' || data === '[[END]]') {
           this.activeConnections.delete(connectionId)
           eventSource.close()
