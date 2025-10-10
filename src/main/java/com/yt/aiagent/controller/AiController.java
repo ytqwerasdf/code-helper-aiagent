@@ -2,10 +2,8 @@ package com.yt.aiagent.controller;
 
 import com.yt.aiagent.agent.CodeManus;
 import com.yt.aiagent.app.CodeHelperApp;
+import com.yt.aiagent.constant.ConversationSign;
 import jakarta.annotation.Resource;
-import lombok.Generated;
-import org.commonmark.node.Code;
-import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,7 +59,7 @@ public class AiController {
         // 业务流
         Flux<String> dataStream = codeHelperApp.doChatByStream(message, chatId)
                 // 正常完成追加结束标识
-                .concatWith(Mono.just("[[END]]"));
+                .concatWith(Mono.just(ConversationSign.CONVERSATION_END));
 
         // 心跳：注释行，防止中间网络设备超时断开
         Flux<String> heartbeat = Flux.interval(Duration.ofSeconds(15))
@@ -116,7 +114,7 @@ public class AiController {
      * @param message
      * @return
      */
-    @GetMapping("/manus/chat")
+    @GetMapping(value = "/manus/chat",produces = "text/event-stream;charset=UTF-8")
     public SseEmitter doChatWithManus(String message){
         CodeManus codeManus = new CodeManus(allTools, dashscopeChatModel);
         return codeManus.runStream(message);

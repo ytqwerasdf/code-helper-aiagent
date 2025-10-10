@@ -2,6 +2,7 @@ package com.yt.aiagent.agent;
 
 import cn.hutool.core.util.StrUtil;
 import com.yt.aiagent.agent.model.AgentState;
+import com.yt.aiagent.constant.ConversationSign;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -134,8 +135,7 @@ public abstract class BaseAgent {
                     results.add(result);
                     //输出当前结果到SSE
                     sseEmitter.send(result);
-                    sseEmitter.send(responseList.get(responseList.size()-1));
-
+                    sseEmitter.send(responseList.getLast());
                 }
                 //检查是否超出步骤限制
                 if(currentStep >= maxStep) {
@@ -144,6 +144,7 @@ public abstract class BaseAgent {
                     sseEmitter.send("Terminated: Reached max steps (" + maxStep + ")");
                 }
                 //正常完成
+                sseEmitter.send(ConversationSign.CONVERSATION_END); //结束标识
                 sseEmitter.complete();
             } catch (Exception e) {
                 state = AgentState.ERROR;
