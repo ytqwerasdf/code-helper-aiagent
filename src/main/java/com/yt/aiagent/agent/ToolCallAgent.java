@@ -130,6 +130,17 @@ public class ToolCallAgent extends ReActAgent{
             //任务结束，更改状态
             setState(AgentState.FINISHED);
         }
+        //判断是否调用的网页抓取工具
+        boolean weScrapingToolCalled = toolResponseMessage.getResponses().stream()
+                .anyMatch(response -> response.name().equals("scrapeWebPage"));
+        //避免返回大量网页数据
+        if(weScrapingToolCalled){
+            String results = toolResponseMessage.getResponses().stream()
+                    .map(response -> "工具 " + response.name() + " 返回结果：抓取成功")
+                    .collect(Collectors.joining("\n"));
+            log.info(results);
+            return results;
+        }
 
         String results = toolResponseMessage.getResponses().stream()
                 .map(response -> "工具 " + response.name() + " 返回结果： " + response.responseData())
