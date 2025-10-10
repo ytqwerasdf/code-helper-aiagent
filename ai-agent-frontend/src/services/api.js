@@ -48,6 +48,13 @@ export class ApiService {
       type: 'code_helper'
     })
     
+    // 连接建立事件
+    eventSource.onopen = (event) => {
+      console.log('SSE连接已建立')
+      // 可以在这里添加连接建立后的处理逻辑
+    }
+    
+    // 消息接收事件
     eventSource.onmessage = (event) => {
       try {
         let data = event.data
@@ -64,11 +71,15 @@ export class ApiService {
           }
         }
         
+        // 检查是否为结束标志
         if (data === '[DONE]' || data === '[[END]]') {
+          console.log('SSE连接正常关闭')
           this.activeConnections.delete(connectionId)
-          eventSource.close()
+          // 标记为正常关闭
+          eventSource._normalClose = true
           onComplete && onComplete()
         } else {
+          // 传递普通消息
           onMessage && onMessage(data)
         }
       } catch (error) {
@@ -77,21 +88,14 @@ export class ApiService {
       }
     }
     
+    // 连接错误事件
     eventSource.onerror = (error) => {
-      console.error('SSE连接错误:', error)
+      console.log('SSE连接错误或异常结束')
       this.activeConnections.delete(connectionId)
       // 主动关闭以阻止浏览器自动重连，避免重复请求同一 message
       try { eventSource.close() } catch (_) {}
       onError && onError(error)
     }
-    
-    // 添加连接状态监控
-    eventSource.addEventListener('error', (event) => {
-      console.log('SSE连接状态变化:', eventSource.readyState)
-      if (eventSource.readyState === EventSource.CLOSED) {
-        console.log('SSE连接已关闭，触发上游cancel信号')
-      }
-    })
     
     // 添加取消方法到eventSource对象
     eventSource.cancel = async () => {
@@ -127,6 +131,13 @@ export class ApiService {
       type: 'manus'
     })
     
+    // 连接建立事件
+    eventSource.onopen = (event) => {
+      console.log('SSE连接已建立')
+      // 可以在这里添加连接建立后的处理逻辑
+    }
+    
+    // 消息接收事件
     eventSource.onmessage = (event) => {
       try {
         let data = event.data
@@ -143,11 +154,15 @@ export class ApiService {
           }
         }
         
+        // 检查是否为结束标志
         if (data === '[DONE]' || data === '[[END]]') {
+          console.log('SSE连接正常关闭')
           this.activeConnections.delete(connectionId)
-          eventSource.close()
+          // 标记为正常关闭
+          eventSource._normalClose = true
           onComplete && onComplete()
         } else {
+          // 传递普通消息
           onMessage && onMessage(data)
         }
       } catch (error) {
@@ -156,20 +171,13 @@ export class ApiService {
       }
     }
     
+    // 连接错误事件
     eventSource.onerror = (error) => {
-      console.error('SSE连接错误:', error)
+      console.log('SSE连接错误或异常结束')
       this.activeConnections.delete(connectionId)
       try { eventSource.close() } catch (_) {}
       onError && onError(error)
     }
-    
-    // 添加连接状态监控
-    eventSource.addEventListener('error', (event) => {
-      console.log('SSE连接状态变化:', eventSource.readyState)
-      if (eventSource.readyState === EventSource.CLOSED) {
-        console.log('SSE连接已关闭，触发上游cancel信号')
-      }
-    })
     
     // 添加取消方法到eventSource对象
     eventSource.cancel = async () => {

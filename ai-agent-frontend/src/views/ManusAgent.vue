@@ -151,24 +151,28 @@ export default {
      * @param {Error} error - 错误对象
      */
     handleSSEError(error) {
-      console.error('SSE连接错误:', error)
+      console.log('SSE连接错误或异常结束')
       if (this.hasCompleted) {
         return
       }
-      if (this.eventSource && this.eventSource.readyState === EventSource.CLOSED) {
-        this.isLoading = false
-        this.messages.push({
-          type: 'ai',
-          content: '抱歉，智能体连接已断开，请稍后重试或刷新页面。'
-        })
-        this.scrollToBottom()
+      // 检查是否为正常关闭，如果是则不显示错误提示
+      if (this.eventSource && this.eventSource._normalClose) {
+        console.log('SSE连接正常关闭，不显示错误提示')
+        return
       }
+      this.isLoading = false
+      this.messages.push({
+        type: 'ai',
+        content: '抱歉，智能体连接已断开，请稍后重试或刷新页面。'
+      })
+      this.scrollToBottom()
     },
     
     /**
      * 处理SSE完成
      */
     handleSSEComplete() {
+      console.log('SSE连接正常关闭')
       this.isLoading = false
       this.hasCompleted = true
       this.eventSource = null
