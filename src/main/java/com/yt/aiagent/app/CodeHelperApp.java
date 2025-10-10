@@ -23,6 +23,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.List;
 
@@ -86,10 +88,11 @@ public class CodeHelperApp {
 
     /**
      * 初始化  ChatClient
+     *
      * @param dashscopeChatModel
      * @param dashscopeChatModel
      */
-    public CodeHelperApp(ChatModel dashscopeChatModel){
+    public CodeHelperApp(ChatModel dashscopeChatModel) {
         //初始化基于文件的会话记忆
         String fileDir = System.getProperty("user.dir") + "/tmp/chat-memory";
 
@@ -110,11 +113,12 @@ public class CodeHelperApp {
 
     /**
      * ai对话，多轮会话记忆
+     *
      * @param message
      * @param chatId
      * @return
      */
-    public String doChat(String message,String chatId){
+    public String doChat(String message, String chatId) {
         ChatResponse chatResponse = chatClient.prompt()
                 .user(message)
                 .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, chatId)
@@ -122,17 +126,18 @@ public class CodeHelperApp {
                 .call()
                 .chatResponse();
         String content = chatResponse.getResult().getOutput().getText();
-        log.info("content: {}",content);
+        log.info("content: {}", content);
         return content;
     }
 
     /**
      * ai对话，多轮会话记忆(SSE流式传输)
+     *
      * @param message
      * @param chatId
      * @return
      */
-    public Flux<String> doChatByStream(String message,String chatId){
+    public Flux<String> doChatByStream(String message, String chatId) {
 
         return chatClient.prompt()
                 .user(message)
@@ -149,26 +154,27 @@ public class CodeHelperApp {
 
     }
 
-    record CodeReport(String title, List<String> solutions){
+    record CodeReport(String title, List<String> solutions) {
 
     }
 
     /**
      * 报告功能，结构化输出
+     *
      * @param message
      * @param chatId
      * @return
      */
-    public CodeReport doChatWithReport(String message,String chatId){
+    public CodeReport doChatWithReport(String message, String chatId) {
         CodeReport codeReport = chatClient
                 .prompt()
-                .system(SYSTEM_PROMPT+"每次对话后都要生成代码结果，标题为{问题}的解决方案，内容为代码列表")
+                .system(SYSTEM_PROMPT + "每次对话后都要生成代码结果，标题为{问题}的解决方案，内容为代码列表")
                 .user(message)
                 .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, chatId)
                         .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 10))
                 .call()
                 .entity(CodeReport.class);
-        log.info("codeReport: {}",codeReport);
+        log.info("codeReport: {}", codeReport);
         return codeReport;
     }
 
@@ -188,11 +194,12 @@ public class CodeHelperApp {
 
     /**
      * 和RAG知识库进行对话
+     *
      * @param message
      * @param chatId
      * @return
      */
-    public String doChatWithRag(String message,String chatId){
+    public String doChatWithRag(String message, String chatId) {
         String rewriteMessage = queryRewriter.doQueryRewrite(message);
 
         ChatResponse chatResponse = chatClient.prompt()
@@ -214,20 +221,22 @@ public class CodeHelperApp {
                 .call()
                 .chatResponse();
         String content = chatResponse.getResult().getOutput().getText();
-        log.info("content: {}",content);
+        log.info("content: {}", content);
         return content;
     }
 
     //调用工具能力
     @Resource
     private ToolCallback[] allTools;
+
     /**
      * 报告功能，调用本地Tools
+     *
      * @param message
      * @param chatId
      * @return
      */
-    public String doChatWithTools(String message,String chatId){
+    public String doChatWithTools(String message, String chatId) {
         ChatResponse chatResponse = chatClient
                 .prompt()
                 .user(message)
@@ -238,7 +247,7 @@ public class CodeHelperApp {
                 .call()
                 .chatResponse();
         String content = chatResponse.getResult().getOutput().getText();
-        log.info("content: {}",content);
+        log.info("content: {}", content);
         return content;
     }
 
@@ -248,22 +257,36 @@ public class CodeHelperApp {
 
     /**
      * 报告功能，调用MCP服务
+     *
      * @param message
      * @param chatId
      * @return
      */
-    public String doChatWithMCP(String message,String chatId){
-        ChatResponse chatResponse = chatClient
-                .prompt()
-                .user(message)
-                .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, chatId)
-                        .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 10))
-                .advisors(new MyLoggerAdvisor())
-                .tools(toolCallbackProvider)
-                .call()
-                .chatResponse();
-        String content = chatResponse.getResult().getOutput().getText();
-        log.info("content: {}",content);
-        return content;
+    public String doChatWithMCP(String message, String chatId) {
+        return Mono.fromCallable(() -> {
+                    ChatResponse chatResponse = chatClient
+                            .prompt()
+                            .user(message)
+                            .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, chatId)
+                                    .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 10))
+                            .advisors(new MyLoggerAdvisor())
+                            .tools(toolCallbackProvider)
+                            .call()
+                            .chatResponse();
+                    String content = chatResponse.getResult().getOutput().getText();
+                    log.info("content: {}", content);
+                    return content;
+                })
+                .timeout(Duration.ofSeconds(30))//30秒超时
+                .retry(2)//重试两次
+                .onErrorResume(TimeoutException.class, ex -> {
+                    log.warn("MCP调用超时，使用降级处理: {}", ex.getMessage());
+                    return Mono.just("MCP服务响应超时，请稍后重试。");
+                })
+                .onErrorResume(Exception.class, ex -> {
+                    log.error("MCP调用异常，使用降级处理: {}", ex.getMessage());
+                    return Mono.just("MCP服务暂时不可用，请使用其他功能。");
+                })
+                .block(); //同步等待调用结果
     }
 }
