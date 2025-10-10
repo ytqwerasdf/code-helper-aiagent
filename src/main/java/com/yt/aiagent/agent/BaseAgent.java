@@ -177,11 +177,101 @@ public abstract class BaseAgent {
         return sseEmitter;
     }
 
+
+    /**
+     * 运行代理(异步、底层调用也变成异步输出)
+     * @param userPrompt
+     * @return
+     */
+    public SseEmitter runStreamDeep(String userPrompt){
+
+        SseEmitter sseEmitter = new SseEmitter(300000L);
+        //使用线程异步处理
+        CompletableFuture.runAsync(() -> {
+            try {
+                //基础校验
+                if (this.state != AgentState.IDLE){
+                    sseEmitter.send("无法从该状态运行代理: "+this.state);
+                    sseEmitter.complete();
+                    return;
+                }
+                if(StrUtil.isBlank(userPrompt)){
+                    sseEmitter.send("不能使用空提示词运行代理 ");
+                    sseEmitter.complete();
+                    return;
+                }
+            }catch (Exception e){
+                sseEmitter.completeWithError(e);
+            }
+            //更改状态
+            this.state = AgentState.RUNNING;
+            //记录消息上下文
+            messageList.add(new UserMessage(userPrompt));
+
+            try {
+                //执行循环
+                for (int i = 0; i < maxStep && state != AgentState.FINISHED; i++) {
+                    int stepNumber = i+1;
+                    currentStep = stepNumber;
+                    log.info("Executing step {}/{}",stepNumber,maxStep);
+                    //单步执行
+                    String stepResult = stepWithStream(sseEmitter);
+                    String result = "Step" + stepNumber + ": "+stepResult;
+                    //输出当前结果到SSE
+                    sseEmitter.send(result);
+                }
+                //检查是否超出步骤限制
+                if(currentStep >= maxStep) {
+                    state = AgentState.FINISHED;
+                    sseEmitter.send("Terminated: Reached max steps (" + maxStep + ")");
+                }
+                //正常完成
+                sseEmitter.send(ConversationSign.CONVERSATION_END); //结束标识
+                sseEmitter.complete();
+            } catch (Exception e) {
+                state = AgentState.ERROR;
+                log.error("error executing agent",e);
+                try {
+                    sseEmitter.send("执行错误"+e.getMessage());
+                    sseEmitter.complete();
+                } catch (IOException ex) {
+                    sseEmitter.completeWithError(ex);
+                }
+//                sseEmitter.completeWithError();
+            }finally {
+                //清理资源
+                this.cleanUp();
+            }
+        });
+
+        //设置超时回调
+        sseEmitter.onTimeout(() -> {
+            this.state = AgentState.ERROR;
+            this.cleanUp();
+            log.warn("SSE connection timeout");
+        });
+        //设置完成回调
+        sseEmitter.onCompletion(() ->{
+            if(this.state == AgentState.RUNNING){
+                this.state = AgentState.FINISHED;
+            }
+            this.cleanUp();
+            log.info("SSE connection completed");
+        });
+
+        return sseEmitter;
+    }
     /**
      * 定义单个步骤
      * @return
      */
     public abstract String step();
+
+    /**
+     * 定义单个步骤(流式)
+     * @return
+     */
+    public abstract String stepWithStream(SseEmitter sseEmitter);
 
     /**
      * 清理资源

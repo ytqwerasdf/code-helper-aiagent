@@ -62,6 +62,7 @@ public abstract class ReActAgent extends BaseAgent {
         }
     }
 
+    @Override
     public String stepWithStream(SseEmitter sseEmitter){
         try {
             //先思考

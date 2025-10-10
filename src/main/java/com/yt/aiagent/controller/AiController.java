@@ -1,6 +1,7 @@
 package com.yt.aiagent.controller;
 
 import com.yt.aiagent.agent.CodeManus;
+import com.yt.aiagent.agent.CodeManusDeepStream;
 import com.yt.aiagent.app.CodeHelperApp;
 import com.yt.aiagent.constant.ConversationSign;
 import jakarta.annotation.Resource;
@@ -117,7 +118,10 @@ public class AiController {
     @GetMapping(value = "/manus/chat",produces = "text/event-stream;charset=UTF-8")
     public SseEmitter doChatWithManus(String message){
         CodeManus codeManus = new CodeManus(allTools, dashscopeChatModel);
-        return codeManus.runStream(message);
+        CodeManusDeepStream codeManusDeepStream = new CodeManusDeepStream(allTools,dashscopeChatModel);
+        return codeManusDeepStream.runStreamDeep(message);
+//        return codeManus.runStream(message);
+
     }
 
 }
