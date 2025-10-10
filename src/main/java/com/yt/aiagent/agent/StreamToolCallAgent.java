@@ -9,9 +9,7 @@ import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.ToolResponseMessage;
 import org.springframework.ai.chat.messages.UserMessage;
-import org.springframework.ai.chat.metadata.ChatResponseMetadata;
 import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.model.tool.ToolCallingManager;
@@ -23,7 +21,6 @@ import reactor.core.publisher.Flux;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -68,7 +65,6 @@ public class StreamToolCallAgent extends ReActAgent {
         Prompt prompt = new Prompt(messageList, this.chatOptions);
         // 收集所有响应片段
         List<ChatResponse> allResponses = new ArrayList<>();
-        StringBuilder fullText = new StringBuilder();
 
         try {
             // 流式调用并实时输出到SSE
@@ -87,7 +83,6 @@ public class StreamToolCallAgent extends ReActAgent {
                             String text = response.getResult().getOutput().getText();
                             if (StrUtil.isNotBlank(text)) {
                                 try {
-                                    fullText.append(text);
                                     sseEmitter.send(text);
                                 } catch (IOException e) {
                                     log.error("Failed to send SSE data", e);
@@ -98,26 +93,14 @@ public class StreamToolCallAgent extends ReActAgent {
                     .doOnComplete(() -> {
                         // 流式调用完成，构建完整响应
                         if (!allResponses.isEmpty()) {
-                            // 取最后一个响应作为基础
-                            ChatResponse lastResponse = allResponses.getLast();
 
-                            // 创建完整的助手消息
-                            AssistantMessage completeMessage = new AssistantMessage(fullText.toString());
-                            Generation generation = new Generation(completeMessage);
-                            // 检查最后一个响应是否包含工具调用信息
-                            if (lastResponse.getResult() != null &&
-                                    lastResponse.getResult().getOutput() != null &&
-                                    !lastResponse.getResult().getOutput().getToolCalls().isEmpty()) {
-
-                                // 如果有工具调用，使用最后一个响应的工具调用信息
-                                completeMessage = lastResponse.getResult().getOutput();
+                            for (ChatResponse response : allResponses) {
+                                if (response.hasToolCalls()){
+                                    this.toolCallChatResponse = response;
+                                    break;
+                                }
                             }
 
-                            // 创建完整的ChatResponse
-                            this.toolCallChatResponse = new ChatResponse(
-                                    List.of(generation),
-                                    new ChatResponseMetadata()
-                            );
                         }
                     })
                     .doOnError(error -> {

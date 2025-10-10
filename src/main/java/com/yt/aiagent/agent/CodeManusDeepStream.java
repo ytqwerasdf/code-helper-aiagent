@@ -14,7 +14,7 @@ public class CodeManusDeepStream extends StreamToolCallAgent{
 
     public CodeManusDeepStream(ToolCallback[] allTools, ChatModel dashscopeChatModel) {
         super(allTools);
-        this.setName("codeManus");
+        this.setName("CodeManusDeepStream");
         String SYSTEM_PROMPT = """
                 You are codeManus, an all-capable AI assistant, aimed at solving any task presented by the user.
                 You have various tools at your disposal that you can call upon to efficiently complete complex requests.
