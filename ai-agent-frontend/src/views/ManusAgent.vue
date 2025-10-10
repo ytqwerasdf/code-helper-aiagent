@@ -18,6 +18,10 @@
         </div>
         <div class="message-content" v-else>
           <div v-html="message.html || message.content"></div>
+          <!-- Step内容显示区域 -->
+          <div v-if="message.stepContent" class="step-content">
+            <div v-html="message.stepHtml || message.stepContent"></div>
+          </div>
           <div class="message-actions">
             <button class="btn-link" @click="copy(message.content)">复制</button>
           </div>
@@ -131,14 +135,64 @@ export default {
      * @param {string} data - 接收到的数据
      */
     handleSSEMessage(data) {
-      // ManusAgent: 每个SSE消息都创建独立的对话气泡
-      // 这样每个AI处理步骤的结果都会显示为单独的消息
-      const aiMsg = {
-        type: 'ai',
-        content: data,
-        html: renderMarkdown(data)
+      // ManusAgent: 流式返回，将消息追加到最后一条AI消息
+      // 如果最后一条消息是AI消息，则追加内容
+      if (this.messages.length > 0 && this.messages[this.messages.length - 1].type === 'ai') {
+        const target = this.messages[this.messages.length - 1]
+        
+        // 检查是否包含Step内容
+        const stepMatch = data.match(/Step\d+:\s*[^\n]*(?:\n[^\n]*)*/g)
+        if (stepMatch) {
+          // 如果有Step内容，将其分离
+          const stepContent = stepMatch.join('\n').trim()
+          const mainContent = data.replace(/Step\d+:\s*[^\n]*(?:\n[^\n]*)*/g, '').trim()
+          
+          // 更新主内容
+          if (mainContent) {
+            target.content += mainContent
+          }
+          
+          // 更新Step内容
+          if (target.stepContent) {
+            target.stepContent += '\n' + stepContent
+          } else {
+            target.stepContent = stepContent
+          }
+          
+          target.html = renderMarkdown(target.content)
+          target.stepHtml = renderMarkdown(target.stepContent)
+        } else {
+          // 普通内容直接追加
+          target.content += data
+          target.html = renderMarkdown(target.content)
+        }
+      } else {
+        // 否则创建新的AI消息
+        const aiMsg = {
+          type: 'ai',
+          content: '',
+          html: '',
+          stepContent: '',
+          stepHtml: ''
+        }
+        
+        // 检查是否包含Step内容
+        const stepMatch = data.match(/Step\d+:\s*[^]*?(?=\n|$)/g)
+        if (stepMatch) {
+          const stepContent = stepMatch.join(' ').trim()
+          const mainContent = data.replace(/Step\d+:\s*[^]*?(?=\n|$)/g, '').trim()
+          
+          aiMsg.content = mainContent
+          aiMsg.stepContent = stepContent
+          aiMsg.html = renderMarkdown(mainContent)
+          aiMsg.stepHtml = renderMarkdown(stepContent)
+        } else {
+          aiMsg.content = data
+          aiMsg.html = renderMarkdown(data)
+        }
+        
+        this.messages.push(aiMsg)
       }
-      this.messages.push(aiMsg)
       
       // 滚动到底部
       this.$nextTick(() => {
