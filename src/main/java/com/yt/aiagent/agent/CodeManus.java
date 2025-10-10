@@ -26,6 +26,7 @@ public  class CodeManus extends ToolCallAgent {
                 For complex tasks, you can break down the problem and use different tools step by step to solve it.
                 After using each tool, clearly explain the execution results and suggest the next steps.
                 If you want to stop the interaction at any point, use the terminate tool/function call.
+                When you finish answering, use the terminate tool/function call.
                 """;
         this.setNextStepPrompt(NEXT_STEP_PROMPT);
         this.setMaxStep(20);
