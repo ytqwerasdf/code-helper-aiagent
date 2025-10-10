@@ -43,6 +43,9 @@ public abstract class BaseAgent {
     //Memory 记忆（需要自主维护会话上下文）
     private List<Message> messageList = new ArrayList<>();
 
+    //大模型响应消息
+    private List<String> responseList = new ArrayList<>();
+
     /**
      * 运行代理
      * @param userPrompt
@@ -131,6 +134,8 @@ public abstract class BaseAgent {
                     results.add(result);
                     //输出当前结果到SSE
                     sseEmitter.send(result);
+                    sseEmitter.send(responseList.get(responseList.size()-1));
+
                 }
                 //检查是否超出步骤限制
                 if(currentStep >= maxStep) {

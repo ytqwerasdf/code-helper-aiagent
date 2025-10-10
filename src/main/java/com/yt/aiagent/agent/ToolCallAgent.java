@@ -82,6 +82,7 @@ public class ToolCallAgent extends ReActAgent{
             List<AssistantMessage.ToolCall> toolCallList = assistantMessage.getToolCalls();
             //输出提示信息
             String result = assistantMessage.getText();
+            getResponseList().add(result);
             log.info(getName()+"的思考："+result);
             log.info(getName()+"选择了"+toolCallList.size()+" 个工具来使用");
             String toolCallInfo = toolCallList.stream()
