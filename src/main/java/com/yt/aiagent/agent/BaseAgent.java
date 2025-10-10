@@ -192,11 +192,13 @@ public abstract class BaseAgent {
                 //基础校验
                 if (this.state != AgentState.IDLE){
                     sseEmitter.send("无法从该状态运行代理: "+this.state);
+                    sseEmitter.send(ConversationSign.CONVERSATION_END);
                     sseEmitter.complete();
                     return;
                 }
                 if(StrUtil.isBlank(userPrompt)){
                     sseEmitter.send("不能使用空提示词运行代理 ");
+                    sseEmitter.send(ConversationSign.CONVERSATION_END);
                     sseEmitter.complete();
                     return;
                 }
@@ -231,13 +233,7 @@ public abstract class BaseAgent {
             } catch (Exception e) {
                 state = AgentState.ERROR;
                 log.error("error executing agent",e);
-                try {
-                    sseEmitter.send("执行错误"+e.getMessage());
-                    sseEmitter.complete();
-                } catch (IOException ex) {
-                    sseEmitter.completeWithError(ex);
-                }
-//                sseEmitter.completeWithError();
+                sseEmitter.completeWithError(e);
             }finally {
                 //清理资源
                 this.cleanUp();

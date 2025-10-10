@@ -18,7 +18,7 @@ public class SearchAndDownloadTool {
 
     @Tool(description = "Search and download images for a specific topic")
     public String searchAndDownloadImages(
-            @ToolParam(description = "Search query for images") String query,
+            @ToolParam(description = "search query keyword") String query,
             @ToolParam(description = "Number of images to download") int count) {
 
         try {

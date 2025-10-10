@@ -70,9 +70,9 @@ public abstract class ReActAgent extends BaseAgent {
             if (!shouldAct) {
                 if (shouldEndConversation()) {
                     setState(AgentState.FINISHED);
-                    return "思考完成 - 无需行动,会话结束";
+                    return "思考完成 - 无需调用工具";
                 }
-                return "思考完成 - 无需行动";
+                return "思考完成 - 无需调用工具";
             }
             //再行动
             return act();
