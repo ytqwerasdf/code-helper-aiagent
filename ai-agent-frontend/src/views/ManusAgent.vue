@@ -251,23 +251,27 @@ export default {
           const stepContent = stepMatch.join('\n').trim()
           const mainContent = data.replace(/Step\d+:\s*[^\n]*(?:\n[^\n]*)*/g, '').trim()
           
-          // 更新主内容
+          // 更新主内容，预处理换行符
           if (mainContent) {
-            target.content += mainContent
+            const processedMainContent = mainContent.replace(/\\n/g, '\n')
+            target.content += processedMainContent
           }
           
-          // 更新Step内容
+          // 更新Step内容，预处理换行符
           if (target.stepContent) {
-            target.stepContent += '\n' + stepContent
+            const processedStepContent = stepContent.replace(/\\n/g, '\n')
+            target.stepContent += '\n' + processedStepContent
           } else {
-            target.stepContent = stepContent
+            const processedStepContent = stepContent.replace(/\\n/g, '\n')
+            target.stepContent = processedStepContent
           }
           
           target.html = renderMarkdown(target.content)
           target.stepHtml = renderMarkdown(target.stepContent)
         } else {
-          // 普通内容直接追加
-          target.content += data
+          // 普通内容直接追加，预处理换行符
+          const processedData = data.replace(/\\n/g, '\n')
+          target.content += processedData
           target.html = renderMarkdown(target.content)
         }
       } else {
@@ -286,13 +290,19 @@ export default {
           const stepContent = stepMatch.join(' ').trim()
           const mainContent = data.replace(/Step\d+:\s*[^]*?(?=\n|$)/g, '').trim()
           
-          aiMsg.content = mainContent
-          aiMsg.stepContent = stepContent
-          aiMsg.html = renderMarkdown(mainContent)
-          aiMsg.stepHtml = renderMarkdown(stepContent)
+          // 预处理换行符
+          const processedMainContent = mainContent.replace(/\\n/g, '\n')
+          const processedStepContent = stepContent.replace(/\\n/g, '\n')
+          
+          aiMsg.content = processedMainContent
+          aiMsg.stepContent = processedStepContent
+          aiMsg.html = renderMarkdown(processedMainContent)
+          aiMsg.stepHtml = renderMarkdown(processedStepContent)
         } else {
-          aiMsg.content = data
-          aiMsg.html = renderMarkdown(data)
+          // 预处理换行符
+          const processedData = data.replace(/\\n/g, '\n')
+          aiMsg.content = processedData
+          aiMsg.html = renderMarkdown(processedData)
         }
         
         this.messages.push(aiMsg)

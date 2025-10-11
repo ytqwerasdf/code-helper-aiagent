@@ -13,7 +13,14 @@ marked.setOptions({
  */
 export function renderMarkdown(text) {
   if (!text) return ''
-  return marked.parse(text)
+  
+  // 预处理：将 \n 转换为实际的换行符
+  let processedText = text.replace(/\\n/g, '\n')
+  
+  // 处理双换行符，确保段落分隔
+  processedText = processedText.replace(/\n\n/g, '\n\n')
+  
+  return marked.parse(processedText)
 }
 
 

@@ -1,11 +1,5 @@
 <template>
   <div id="app">
-    <!-- 全局背景粒子 -->
-    <div class="global-particles" ref="globalParticles"></div>
-    
-    <!-- 全局网格背景 -->
-    <div class="global-grid"></div>
-    
     <!-- 页面切换动画容器 -->
     <transition name="page" mode="out-in">
       <router-view />
@@ -27,98 +21,23 @@ export default {
   
   data() {
     return {
-      globalParticles: [],
-      animationId: null,
       isLoading: true
     }
   },
   
   mounted() {
-    this.initGlobalParticles()
-    this.startGlobalAnimation()
     this.initSEO()
     
     // 模拟加载时间
     setTimeout(() => {
       this.isLoading = false
-    }, 1500)
-  },
-  
-  beforeUnmount() {
-    if (this.animationId) {
-      cancelAnimationFrame(this.animationId)
-    }
+    }, 1000)
   },
   
   methods: {
-    initGlobalParticles() {
-      const container = this.$refs.globalParticles
-      if (!container) return
-      
-      // 创建全局粒子
-      for (let i = 0; i < 30; i++) {
-        this.globalParticles.push({
-          x: Math.random() * window.innerWidth,
-          y: Math.random() * window.innerHeight,
-          vx: (Math.random() - 0.5) * 0.3,
-          vy: (Math.random() - 0.5) * 0.3,
-          size: Math.random() * 2 + 1,
-          opacity: Math.random() * 0.3 + 0.1
-        })
-      }
-    },
-    
-    startGlobalAnimation() {
-      const animate = () => {
-        this.updateGlobalParticles()
-        this.renderGlobalParticles()
-        this.animationId = requestAnimationFrame(animate)
-      }
-      animate()
-    },
-    
-    updateGlobalParticles() {
-      this.globalParticles.forEach(particle => {
-        particle.x += particle.vx
-        particle.y += particle.vy
-        
-        // 边界检测
-        if (particle.x < 0 || particle.x > window.innerWidth) {
-          particle.vx *= -1
-        }
-        if (particle.y < 0 || particle.y > window.innerHeight) {
-          particle.vy *= -1
-        }
-        
-        // 保持粒子在屏幕内
-        particle.x = Math.max(0, Math.min(window.innerWidth, particle.x))
-        particle.y = Math.max(0, Math.min(window.innerHeight, particle.y))
-      })
-    },
-    
-    renderGlobalParticles() {
-      const container = this.$refs.globalParticles
-      if (!container) return
-      
-      container.innerHTML = ''
-      
-      this.globalParticles.forEach(particle => {
-        const element = document.createElement('div')
-        element.className = 'global-particle'
-        element.style.cssText = `
-          position: absolute;
-          left: ${particle.x}px;
-          top: ${particle.y}px;
-          width: ${particle.size}px;
-          height: ${particle.size}px;
-          background: radial-gradient(circle, rgba(0,255,0,${particle.opacity}) 0%, transparent 70%);
-          border-radius: 50%;
-          pointer-events: none;
-        `
-        container.appendChild(element)
-      })
-    },
-    
+    /**
+     * 初始化SEO
+     */
     initSEO() {
       // 设置页面标题和描述
       document.title = 'AI智能助手平台 - 专业的AI编程助手和文档助手'
@@ -156,66 +75,48 @@ export default {
 </script>
 
 <style>
-#app {
+/* 全局样式重置 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: #ffffff;
-  height: 100vh;
-  margin: 0;
-  padding: 0;
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0d1117 100%);
+  color: #333333;
+  background: #ffffff;
+  line-height: 1.6;
+  font-size: 14px;
 }
 
-* {
-  box-sizing: border-box;
+#app {
+  min-height: 100vh;
+  background: #ffffff;
 }
 
-body {
-  margin: 0;
-  padding: 0;
-  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0d1117 100%);
+/* 页面切换动画 */
+.page-enter-active, .page-leave-active {
+  transition: opacity 0.3s ease;
 }
 
-/* 全局粒子背景 */
-.global-particles {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 1;
+.page-enter-from, .page-leave-to {
+  opacity: 0;
 }
 
-/* 全局网格背景 */
-.global-grid {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: 
-    linear-gradient(rgba(0, 255, 0, 0.1) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 255, 0, 0.1) 1px, transparent 1px);
-  background-size: 50px 50px;
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0.3;
-}
-
-/* 全局加载器 */
+/* 全局加载指示器 */
 .global-loader {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0d1117 100%);
+  background: rgba(255, 255, 255, 0.95);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -224,24 +125,21 @@ body {
 
 .loader-content {
   text-align: center;
-  color: #00ff00;
-  font-family: 'Courier New', monospace;
 }
 
 .loader-spinner {
-  width: 60px;
-  height: 60px;
-  border: 3px solid rgba(0, 255, 0, 0.3);
-  border-top: 3px solid #00ff00;
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #333333;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 1rem;
 }
 
 .loader-text {
-  font-size: 1.2rem;
-  font-weight: 600;
-  animation: pulse 2s ease-in-out infinite;
+  color: #666666;
+  font-size: 14px;
 }
 
 @keyframes spin {
@@ -249,44 +147,60 @@ body {
   100% { transform: rotate(360deg); }
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
+/* 简约复古按钮样式 */
+button {
+  border: 1px solid #e5e5e5;
+  background: #ffffff;
+  cursor: pointer;
+  font-family: inherit;
+  color: #333333;
+  border-radius: 6px;
+  padding: 8px 16px;
+  transition: all 0.2s ease;
 }
 
-/* 页面切换动画 */
-.page-enter-active, .page-leave-active {
-  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+button:hover {
+  background: #f5f5f5;
+  border-color: #d5d5d5;
 }
 
-.page-enter-from {
-  opacity: 0;
-  transform: translateX(100px) scale(0.95);
+/* 简约复古输入框样式 */
+input, textarea {
+  border: 1px solid #e5e5e5;
+  outline: none;
+  font-family: inherit;
+  color: #333333;
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 8px 12px;
+  transition: all 0.2s ease;
 }
 
-.page-leave-to {
-  opacity: 0;
-  transform: translateX(-100px) scale(0.95);
+input:focus, textarea:focus {
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
 }
 
-
-/* 滚动条样式 */
-::-webkit-scrollbar {
-  width: 8px;
+/* 简约复古链接样式 */
+a {
+  color: #333333;
+  text-decoration: none;
+  transition: color 0.2s ease;
 }
 
-::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
+a:hover {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+/* 代码高亮样式 - 模仿图片中的灰色背景框 */
+code, .code-highlight {
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
   border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #00ffff, #ff00ff);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #00cccc, #ff00cc);
+  padding: 2px 6px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 13px;
+  color: #1a1a1a;
 }
 </style>
-

@@ -268,14 +268,18 @@ export default {
       // 如果最后一条消息是AI消息，则追加内容
       if (this.messages.length > 0 && this.messages[this.messages.length - 1].type === 'ai') {
         const target = this.messages[this.messages.length - 1]
-        target.content += data
+        // 预处理换行符
+        const processedData = data.replace(/\\n/g, '\n')
+        target.content += processedData
         target.html = renderMarkdown(target.content)
       } else {
         // 否则创建新的AI消息
+        // 预处理换行符
+        const processedData = data.replace(/\\n/g, '\n')
         const aiMsg = {
           type: 'ai',
-          content: data,
-          html: renderMarkdown(data)
+          content: processedData,
+          html: renderMarkdown(processedData)
         }
         this.messages.push(aiMsg)
       }
