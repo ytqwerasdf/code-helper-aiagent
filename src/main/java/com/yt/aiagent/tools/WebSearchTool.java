@@ -30,8 +30,8 @@ public class WebSearchTool {
     @Value("${search-api.api-key}")
     private  String apiKey;
 
-    @Tool(description = "Search for information from Baidu Search Engine")
-    public String searchWeb(
+    @Tool(description = "Search for information from Baidu Search Engine(Backup search tool)")
+    public String spareSearchWeb(
             @ToolParam(description = "Search query keyword") String query){
         Map<String,Object> paramMap = new HashMap<>();
         paramMap.put("q",query);

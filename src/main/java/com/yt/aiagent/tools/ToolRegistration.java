@@ -39,6 +39,9 @@ public class ToolRegistration {
     @Resource
     WebSearchTool webSearchTool;
 
+    @Resource
+    LangSearchTool langSearchTool;
+
 
     @Bean
     public ToolCallback[] allTools(){
@@ -52,7 +55,8 @@ public class ToolRegistration {
                 terminateTool,
                 pdfWithImagesTool,
                 searchAndDownloadTool,
-                imageSearchTool
+                imageSearchTool,
+                langSearchTool
         );
     }
 }
