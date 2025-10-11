@@ -12,6 +12,8 @@ import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Image;
 import com.itextpdf.layout.element.Paragraph;
 import com.yt.aiagent.constant.FileConstant;
+import com.yt.aiagent.oss.service.AliyunOssService;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
@@ -21,6 +23,9 @@ import java.io.File;
 @Slf4j
 @Component
 public class PDFWithImagesTool {
+
+    @Resource
+    AliyunOssService aliyunOssService;
 
     @Tool(description = "Generate a PDF file with content and images")
     public String generatePDFWithImages(
@@ -67,7 +72,8 @@ public class PDFWithImagesTool {
                     }
                 }
             }
-            return "PDF with images generated successfully to: " + filePath;
+            String upLoadUrl = aliyunOssService.upLoad(filePath);
+            return "PDF with images generated successfully to: "+upLoadUrl;
         } catch (Exception e) {
             return "Error generating PDF with images: " + e.getMessage();
         }

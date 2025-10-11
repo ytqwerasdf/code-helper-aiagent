@@ -16,7 +16,7 @@ import java.util.stream.Stream;
 /**
  * 编程助手向量数据库配置（初始化基于内存的向量数据库 Bean）
  */
-//@Configuration
+@Configuration
 public class CodeHelperVectorStoreConfig {
 
     @Resource
@@ -28,7 +28,7 @@ public class CodeHelperVectorStoreConfig {
     @Resource
     private MyKeywordEnricher myKeywordEnricher;
 
-//    @Bean
+    @Bean
     VectorStore codeHelperVectorStore(EmbeddingModel dashscopeEmbeddingModel){
         SimpleVectorStore simpleVectorStore = SimpleVectorStore.builder(dashscopeEmbeddingModel).build();
         //加载文档

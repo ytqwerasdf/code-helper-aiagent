@@ -23,6 +23,7 @@ public class CodeManusDeepStream extends StreamToolCallAgent{
         String NEXT_STEP_PROMPT = """
                 Based on user needs, proactively select the most appropriate tool or combination of tools.
                 For complex tasks, you can break down the problem and use different tools step by step to solve it.
+                Before using each tool, clearly explain what this tool is used for(except doTerminate).
                 After using each tool, clearly explain the execution results and suggest the next steps.
                 If you want to stop the interaction at any point, use the terminate tool/function call.
                 When you finish answering, use the terminate tool/function call.

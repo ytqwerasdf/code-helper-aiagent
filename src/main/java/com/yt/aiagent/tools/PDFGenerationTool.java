@@ -8,6 +8,8 @@ import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Paragraph;
 import com.yt.aiagent.constant.FileConstant;
+import com.yt.aiagent.oss.service.AliyunOssService;
+import jakarta.annotation.Resource;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
@@ -19,6 +21,9 @@ import java.io.File;
  */
 @Component
 public class PDFGenerationTool {
+
+    @Resource
+    AliyunOssService aliyunOssService;
 
     @Tool(description = "Generate a PDF file with given content")
     public String generatePDF(@ToolParam(description = "Name of the file to save the generate PDF") String fileName,
@@ -40,7 +45,8 @@ public class PDFGenerationTool {
                 //添加段落并关闭文档
                 document.add(paragraph);
             }
-            return "PDF generate successfully to: "+filePath;
+            String upLoadUrl = aliyunOssService.upLoad(filePath);
+            return "PDF generate successfully to: "+upLoadUrl;
         } catch (Exception e) {
             return "Error generating PDF: "+e.getMessage();
         }
