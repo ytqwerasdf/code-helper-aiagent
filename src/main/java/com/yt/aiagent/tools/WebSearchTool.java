@@ -4,6 +4,9 @@ import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
+import com.yt.aiagent.tools.response.WebSearchResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,6 +25,7 @@ import java.util.stream.Collectors;
 public class WebSearchTool {
     //SearchAPI 的搜索接口地址
     private static final String SEARCH_API_URL = "https://www.searchapi.io/api/v1/search";
+    private static final Logger log = LoggerFactory.getLogger(WebSearchTool.class);
 
     @Value("${search-api.api-key}")
     private  String apiKey;
@@ -41,13 +45,23 @@ public class WebSearchTool {
             JSONArray organicResults = jsonObject.getJSONArray("organic_results");
             // 计算实际能取到的最大索引（取最小值，避免越界）
             int endIndex = Math.min(organicResults.size(), 5);
+            List<WebSearchResponse> results = new ArrayList<>();
             // 只有当存在数据时才截取，否则返回空列表
-            List<Object> objects = endIndex > 0 ? organicResults.subList(0, endIndex) : new ArrayList<>();
+            if (endIndex > 0) {
+                // 遍历前N条结果并转换为WebSearchResponse对象
+                for (int i = 0; i < endIndex; i++) {
+                    JSONObject item = organicResults.getJSONObject(i);
+                    // 转换为实体类
+                    WebSearchResponse searchResponse = JSONUtil.toBean(item, WebSearchResponse.class);
+                    results.add(searchResponse);
+                }
+            }
+
             //拼接搜索结果为字符串
-            String result = objects.stream().map(obj -> {
-                JSONObject tmpJSONObject = (JSONObject) obj;
-                return tmpJSONObject.toString();
-            }).collect(Collectors.joining(","));
+            String result = results.stream()
+                    .map(webRes -> "Title：" + webRes.getTitle() + "\nLink："+webRes.getLink()+"\nSnippet: " + webRes.getSnippet() + "\n\n")
+                    .collect(Collectors.joining());
+            log.info(result);
             return result;
         }catch (Exception e){
             return "Error searching Baidu: "+e.getMessage();
