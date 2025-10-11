@@ -3,6 +3,7 @@ package com.yt.aiagent.tools;
 import lombok.experimental.Tolerate;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
+import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -11,6 +12,7 @@ import java.io.InputStreamReader;
 /**
  * 终端操作工具
  */
+@Component
 public class TerminalOperationTool {
 
     @Tool(description = "Execute a command in the terminal")

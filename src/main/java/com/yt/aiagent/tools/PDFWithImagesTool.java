@@ -15,9 +15,11 @@ import com.yt.aiagent.constant.FileConstant;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
+import org.springframework.stereotype.Component;
 
 import java.io.File;
 @Slf4j
+@Component
 public class PDFWithImagesTool {
 
     @Tool(description = "Generate a PDF file with content and images")

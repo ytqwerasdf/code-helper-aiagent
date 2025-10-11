@@ -123,7 +123,7 @@ public class StreamToolCallAgent extends ReActAgent {
 
             String result = assistantMessage.getText();
             getResponseList().add(result);
-            log.info(getName() + "选择了" + toolCallList.size() + " 个工具来使用");
+            log.info(getName() + "选择了" + toolCallList.size() + " 个工具来使用："+toolCallList.getFirst().name());
 
             if (toolCallList.isEmpty()) {
                 getMessageList().add(assistantMessage);

@@ -11,21 +11,40 @@ import org.springframework.context.annotation.Configuration;
 public class ToolRegistration {
 
     @Resource
+    FileOperationTool fileOperationTool;
+
+    @Resource
+    ImageSearchTool imageSearchTool;
+
+    @Resource
+    PDFGenerationTool pdfGenerationTool;
+
+    @Resource
+    PDFWithImagesTool pdfWithImagesTool;
+
+    @Resource
+    ResourceDownloadTool resourceDownloadTool;
+
+    @Resource
+    SearchAndDownloadTool searchAndDownloadTool;
+
+    @Resource
+    TerminalOperationTool terminalOperationTool;
+
+    @Resource
+    TerminateTool terminateTool;
+
+    @Resource
+    WebScrapingTool webScrapingTool;
+
+    @Resource
     WebSearchTool webSearchTool;
+
+
+
 
     @Bean
     public ToolCallback[] allTools(){
-
-        FileOperationTool fileOperationTool = new FileOperationTool();
-        WebScrapingTool webScrapingTool = new WebScrapingTool();
-        ResourceDownloadTool resourceDownloadTool = new ResourceDownloadTool();
-        TerminalOperationTool terminalOperationTool = new TerminalOperationTool();
-        PDFGenerationTool pdfGenerationTool = new PDFGenerationTool();
-        TerminateTool terminateTool = new TerminateTool();
-        PDFWithImagesTool pdfWithImagesTool = new PDFWithImagesTool();
-        SearchAndDownloadTool searchAndDownloadTool = new SearchAndDownloadTool();
-        ImageSearchTool imageSearchTool = new ImageSearchTool();
-
         return ToolCallbacks.from(
                 fileOperationTool,
                 webSearchTool,
