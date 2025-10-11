@@ -158,10 +158,10 @@ public class StreamToolCallAgent extends ReActAgent {
             setState(AgentState.FINISHED);
         }
         //判断是否调用的网页抓取工具
-        boolean weScrapingToolCalled = toolResponseMessage.getResponses().stream()
+        boolean webScrapingToolCalled = toolResponseMessage.getResponses().stream()
                 .anyMatch(response -> response.name().equals("scrapeWebPage"));
         //避免返回大量网页数据
-        if(weScrapingToolCalled){
+        if(webScrapingToolCalled){
             String results = toolResponseMessage.getResponses().stream()
                     .map(response -> "工具 " + response.name() + " 返回结果：抓取成功")
                     .collect(Collectors.joining("\n"));

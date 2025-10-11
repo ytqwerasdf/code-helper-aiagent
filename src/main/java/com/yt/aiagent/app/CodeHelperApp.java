@@ -153,8 +153,11 @@ public class CodeHelperApp {
      */
     public Flux<String> doChatByStream(String message, String chatId) {
 
+        String rewriteMessage = queryRewriter.doQueryRewrite(message);
+
+
         return chatClient.prompt()
-                .user(message)
+                .user(rewriteMessage)
                 .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, chatId)
                         .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 10))
                 .stream()
@@ -176,10 +179,10 @@ public class CodeHelperApp {
      * @return
      */
     public Flux<String> doChatWithRag(String message, String chatId) {
-//        String rewriteMessage = queryRewriter.doQueryRewrite(message);
+        String rewriteMessage = queryRewriter.doQueryRewrite(message);
 
         return chatClient.prompt()
-                .user(message)
+                .user(rewriteMessage)
                 .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, chatId)
                         .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 10))
                 //开启日志

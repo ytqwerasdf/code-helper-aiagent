@@ -13,8 +13,12 @@
             <span class="avatar-text">AI</span>
           </div>
           <div class="header-info">
-            <h2>AI 超级智能体</h2>
+            <h2>AI 超级智能体（体验版）</h2>
             <p>具备多种工具和功能的强大AI智能体</p>
+            <div class="usage-limit">
+              <span class="limit-text">体验版限制：仅可进行10次对话</span>
+              <span class="remaining-count">剩余次数：{{ maxConversations - conversationCount }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -143,7 +147,9 @@ export default {
       isLoading: false,
       eventSource: null,
       hasCompleted: false,
-      processedMessages: new Set() // 用于去重
+      processedMessages: new Set(), // 用于去重
+      conversationCount: 0, // 对话次数计数器
+      maxConversations: 10 // 最大对话次数
     }
   },
   
@@ -172,6 +178,12 @@ export default {
         return
       }
       
+      // 检查对话次数限制
+      if (this.conversationCount >= this.maxConversations) {
+        showToast('体验版对话次数已达上限，请升级到完整版')
+        return
+      }
+      
       const message = this.inputMessage.trim()
       this.inputMessage = ''
       
@@ -180,6 +192,9 @@ export default {
         type: 'user',
         content: message
       })
+      
+      // 增加对话次数计数
+      this.conversationCount++
       
       // 滚动到底部
       this.$nextTick(() => {
