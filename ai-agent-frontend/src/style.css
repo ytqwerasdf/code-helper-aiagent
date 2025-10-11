@@ -731,6 +731,200 @@ body {
   color: rgba(255, 255, 255, 0.8);
 }
 
+/* RAG选项样式 */
+.rag-options {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: rgba(0, 20, 40, 0.5);
+  border: 1px solid rgba(0, 255, 0, 0.2);
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.rag-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rag-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0.5rem;
+  border-radius: 6px;
+}
+
+.rag-label:hover {
+  background: rgba(0, 255, 0, 0.05);
+}
+
+.rag-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: #00ff00;
+  cursor: pointer;
+}
+
+.rag-text {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #e6e6e6;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.rag-icon {
+  font-size: 1.1rem;
+}
+
+.rag-description {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.8rem;
+  margin-left: 2.5rem;
+  font-family: 'Courier New', monospace;
+  line-height: 1.4;
+}
+
+.rag-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rag-badge {
+  background: linear-gradient(135deg, #00ff00, #0099ff);
+  color: #000;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+  animation: ragPulse 2s ease-in-out infinite;
+}
+
+@keyframes ragPulse {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 rgba(0, 255, 0, 0.4);
+    transform: scale(1);
+  }
+  50% { 
+    box-shadow: 0 0 0 8px rgba(0, 255, 0, 0);
+    transform: scale(1.02);
+  }
+}
+
+/* RAG类型选择器样式 */
+.rag-type-selector {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(0, 30, 60, 0.3);
+  border: 1px solid rgba(0, 255, 0, 0.3);
+  border-radius: 8px;
+  backdrop-filter: blur(5px);
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rag-type-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  color: #e6e6e6;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.rag-type-icon {
+  font-size: 1rem;
+}
+
+.rag-type-text {
+  color: #00ff00;
+}
+
+.rag-type-select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: rgba(0, 20, 40, 0.8);
+  border: 1px solid rgba(0, 255, 0, 0.3);
+  border-radius: 6px;
+  color: #e6e6e6;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  outline: none;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.rag-type-select:focus {
+  border-color: #00ff00;
+  box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+  background: rgba(0, 30, 60, 0.9);
+}
+
+.rag-type-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.rag-type-select option {
+  background: rgba(0, 20, 40, 0.9);
+  color: #e6e6e6;
+  padding: 0.5rem;
+}
+
+.rag-type-description {
+  margin-top: 0.5rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.8rem;
+  font-family: 'Courier New', monospace;
+  line-height: 1.4;
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  border-left: 3px solid #00ff00;
+}
+
+.rag-type-badge {
+  background: linear-gradient(135deg, #0099ff, #00ff00);
+  color: #000;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+  margin-left: 0.5rem;
+  animation: ragTypePulse 2s ease-in-out infinite;
+}
+
+@keyframes ragTypePulse {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 rgba(0, 150, 255, 0.4);
+    transform: scale(1);
+  }
+  50% { 
+    box-shadow: 0 0 0 6px rgba(0, 150, 255, 0);
+    transform: scale(1.02);
+  }
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .home-title {
@@ -816,6 +1010,49 @@ body {
   .send-btn, .stop-btn {
     padding: 0.8rem 1rem;
     font-size: 0.9rem;
+  }
+  
+  .rag-options {
+    margin: 0.75rem 0;
+    padding: 0.75rem;
+  }
+  
+  .rag-text {
+    font-size: 0.8rem;
+  }
+  
+  .rag-description {
+    font-size: 0.75rem;
+    margin-left: 2rem;
+  }
+  
+  .rag-badge {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.6rem;
+  }
+  
+  .rag-type-selector {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+  }
+  
+  .rag-type-label {
+    font-size: 0.8rem;
+  }
+  
+  .rag-type-select {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.8rem;
+  }
+  
+  .rag-type-description {
+    font-size: 0.75rem;
+    padding: 0.4rem;
+  }
+  
+  .rag-type-badge {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.6rem;
   }
 }
 

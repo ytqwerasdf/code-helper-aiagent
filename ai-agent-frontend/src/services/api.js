@@ -109,6 +109,89 @@ export class ApiService {
   }
 
   /**
+   * 创建SSE连接用于AI编程助手（RAG模式）
+   * @param {string} message - 用户消息
+   * @param {string} chatId - 聊天室ID
+   * @param {Function} onMessage - 消息回调函数
+   * @param {Function} onError - 错误回调函数
+   * @param {Function} onComplete - 完成回调函数
+   * @returns {EventSource} SSE连接对象
+   */
+  static createCodeHelperRAGSSE(message, chatId, onMessage, onError, onComplete) {
+    const url = `${api.defaults.baseURL}/ai/code_helper/chat/sse/rag?message=${encodeURIComponent(message)}&chatId=${encodeURIComponent(chatId)}&_t=${Date.now()}`
+    
+    const eventSource = new EventSource(url, {
+      withCredentials: false
+    })
+    const connectionId = `code_helper_rag_${chatId}_${Date.now()}`
+    
+    // 存储连接信息，用于取消操作
+    this.activeConnections.set(connectionId, {
+      eventSource,
+      chatId,
+      type: 'code_helper_rag'
+    })
+    
+    // 连接建立事件
+    eventSource.onopen = (event) => {
+      console.log('RAG SSE连接已建立')
+    }
+    
+    // 消息接收事件
+    eventSource.onmessage = (event) => {
+      try {
+        let data = event.data
+        // 处理字符编码问题，确保正确显示中文
+        if (typeof data === 'string') {
+          // 检查是否包含乱码，如果是则尝试修复
+          if (data.includes('æ') || data.includes('è') || data.includes('å')) {
+            try {
+              // 使用更简单的方法处理编码问题
+              data = unescape(encodeURIComponent(data))
+            } catch (e) {
+              console.warn('字符解码失败，使用原始数据:', e)
+            }
+          }
+        }
+        
+        // 检查是否为结束标志
+        if (data === '[DONE]' || data === '[[END]]') {
+          console.log('RAG SSE连接正常关闭')
+          this.activeConnections.delete(connectionId)
+          // 标记为正常关闭
+          eventSource._normalClose = true
+          onComplete && onComplete()
+        } else {
+          // 传递普通消息
+          onMessage && onMessage(data)
+        }
+      } catch (error) {
+        console.error('RAG SSE消息解析错误:', error)
+        onError && onError(error)
+      }
+    }
+    
+    // 连接错误事件
+    eventSource.onerror = (error) => {
+      console.log('RAG SSE连接错误或异常结束')
+      this.activeConnections.delete(connectionId)
+      // 主动关闭以阻止浏览器自动重连，避免重复请求同一 message
+      try { eventSource.close() } catch (_) {}
+      onError && onError(error)
+    }
+    
+    // 添加取消方法到eventSource对象
+    eventSource.cancel = async () => {
+      await this.cancelConnection(connectionId, chatId, 'code_helper_rag')
+    }
+    
+    // 标记连接状态，防止重复取消
+    eventSource._isCancelling = false
+    
+    return eventSource
+  }
+
+  /**
    * 创建SSE连接用于AI超级智能体
    * @param {string} message - 用户消息
    * @param {Function} onMessage - 消息回调函数

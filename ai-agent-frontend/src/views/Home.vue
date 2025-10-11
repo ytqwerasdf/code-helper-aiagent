@@ -31,9 +31,10 @@
             <div class="terminal-line" v-for="(line, index) in displayedLines" :key="index" 
                  :class="{ 'visible': line.visible }">
               <span class="output">{{ line.text }}</span>
+              <span class="cursor" v-if="line.typing">|</span>
             </div>
             <div class="terminal-line click-hint" v-if="!terminalStarted">
-              <span class="hint">点击启动AI系统...</span>
+              <span class="hint">Click to start AI system...</span>
             </div>
           </div>
         </div>
@@ -118,11 +119,12 @@ export default {
       displayedCommand: '',
       displayedLines: [],
       terminalLines: [
-        { text: '[INFO] AI智能助手平台已启动', delay: 1000 },
-        { text: '[INFO] 系统状态: 在线', delay: 1500 },
-        { text: '[INFO] 准备就绪，等待用户指令...', delay: 2000 }
+        { text: '[INFO] AI Assistant Platform Initialized', delay: 1000 },
+        { text: '[INFO] System Status: Online', delay: 1500 },
+        { text: '[INFO] Neural Networks: Active', delay: 2000 },
+        { text: '[INFO] Ready for user commands...', delay: 2500 }
       ],
-      fullCommand: './ai-assistant --init'
+      fullCommand: './ai-assistant --init --mode=enhanced'
     }
   },
   
@@ -261,13 +263,22 @@ export default {
       // 等待一下再显示输出
       await this.delay(500)
       
-      // 逐行显示输出
+      // 逐行显示输出，每行使用打字机效果
       for (let i = 0; i < this.terminalLines.length; i++) {
         await this.delay(this.terminalLines[i].delay)
+        
+        // 添加新行，初始为空
         this.displayedLines.push({
-          text: this.terminalLines[i].text,
-          visible: true
+          text: '',
+          visible: true,
+          typing: true
         })
+        
+        // 打字机效果显示这一行
+        await this.typeLine(this.terminalLines[i].text, i)
+        
+        // 标记这一行打字完成
+        this.displayedLines[i].typing = false
       }
       
       this.terminalAnimating = false
@@ -282,10 +293,27 @@ export default {
       
       for (let i = 0; i < this.fullCommand.length; i++) {
         this.displayedCommand += this.fullCommand[i]
-        await this.delay(50)
+        // 随机化打字速度，模拟真实打字
+        const delay = Math.random() * 30 + 20 // 20-50ms随机延迟
+        await this.delay(delay)
       }
       
       this.commandTyping = false
+    },
+    
+    /**
+     * 打字机效果显示单行文本
+     */
+    async typeLine(text, lineIndex) {
+      const line = this.displayedLines[lineIndex]
+      if (!line) return
+      
+      for (let i = 0; i < text.length; i++) {
+        line.text += text[i]
+        // 随机化打字速度
+        const delay = Math.random() * 40 + 30 // 30-70ms随机延迟
+        await this.delay(delay)
+      }
     },
     
     /**

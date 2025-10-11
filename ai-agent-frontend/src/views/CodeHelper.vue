@@ -107,10 +107,56 @@
           </button>
         </div>
       </div>
+      
+      <!-- RAG选项 -->
+      <div class="rag-options">
+        <div class="rag-toggle">
+          <label class="rag-label">
+            <input 
+              type="checkbox" 
+              v-model="useRAG" 
+              :disabled="isLoading"
+              class="rag-checkbox"
+            />
+            <span class="rag-text">
+              <span class="rag-icon">🧠</span>
+              启用RAG增强检索
+            </span>
+          </label>
+          <div class="rag-description">
+            RAG模式将使用知识库检索来提供更准确的编程建议
+          </div>
+        </div>
+        
+        <!-- RAG类型选择 -->
+        <div class="rag-type-selector" v-if="useRAG">
+          <label class="rag-type-label">
+            <span class="rag-type-icon">⚙️</span>
+            <span class="rag-type-text">RAG类型选择：</span>
+          </label>
+          <select 
+            v-model="ragType" 
+            :disabled="isLoading"
+            class="rag-type-select"
+          >
+            <option value="memory">基于内存的RAG</option>
+            <option value="local">基于本地数据库的RAG</option>
+            <option value="cloud">基于云端数据库的RAG</option>
+          </select>
+          <div class="rag-type-description">
+            {{ getRAGTypeDescription(ragType) }}
+          </div>
+        </div>
+      </div>
+      
       <div class="input-footer">
         <div class="status-indicator" :class="{ 'active': isLoading }">
           <div class="status-dot"></div>
           <span class="status-text">{{ isLoading ? 'AI正在思考...' : '准备就绪' }}</span>
+        </div>
+        <div class="rag-status" v-if="useRAG">
+          <span class="rag-badge">RAG模式已启用</span>
+          <span class="rag-type-badge">{{ getRAGTypeName(ragType) }}</span>
         </div>
       </div>
     </div>
@@ -132,7 +178,9 @@ export default {
       inputMessage: '',
       isLoading: false,
       eventSource: null,
-      hasCompleted: false
+      hasCompleted: false,
+      useRAG: false,
+      ragType: 'memory'
     }
   },
   
@@ -186,14 +234,24 @@ export default {
           try { this.eventSource.close() } catch (_) {}
           this.eventSource = null
         }
-        // 创建SSE连接
-        this.eventSource = ApiService.createCodeHelperSSE(
-          message,
-          this.chatId,
-          this.handleSSEMessage,
-          this.handleSSEError,
-          this.handleSSEComplete
-        )
+        // 根据RAG选项创建SSE连接
+        if (this.useRAG) {
+          this.eventSource = ApiService.createCodeHelperRAGSSE(
+            message,
+            this.chatId,
+            this.handleSSEMessage,
+            this.handleSSEError,
+            this.handleSSEComplete
+          )
+        } else {
+          this.eventSource = ApiService.createCodeHelperSSE(
+            message,
+            this.chatId,
+            this.handleSSEMessage,
+            this.handleSSEError,
+            this.handleSSEComplete
+          )
+        }
         // 开始新一轮响应，重置完成标记
         this.hasCompleted = false
       } catch (error) {
@@ -311,6 +369,34 @@ export default {
         content: '⏹️ 回答已停止'
       })
       this.scrollToBottom()
+    },
+    
+    /**
+     * 获取RAG类型描述
+     * @param {string} type - RAG类型
+     * @returns {string} 描述文本
+     */
+    getRAGTypeDescription(type) {
+      const descriptions = {
+        memory: '使用内存中的知识库，响应速度快，适合临时查询',
+        local: '使用本地数据库，数据持久化，适合长期使用',
+        cloud: '使用云端数据库，数据丰富，适合复杂查询'
+      }
+      return descriptions[type] || descriptions.memory
+    },
+    
+    /**
+     * 获取RAG类型显示名称
+     * @param {string} type - RAG类型
+     * @returns {string} 显示名称
+     */
+    getRAGTypeName(type) {
+      const names = {
+        memory: '内存RAG',
+        local: '本地RAG',
+        cloud: '云端RAG'
+      }
+      return names[type] || names.memory
     }
   }
 }
