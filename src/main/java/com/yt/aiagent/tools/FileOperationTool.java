@@ -3,6 +3,8 @@ package com.yt.aiagent.tools;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IORuntimeException;
 import com.yt.aiagent.constant.FileConstant;
+import com.yt.aiagent.oss.service.AliyunOssService;
+import jakarta.annotation.Resource;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
@@ -14,6 +16,9 @@ import java.io.File;
  */
 @Component
 public class FileOperationTool {
+
+    @Resource
+    AliyunOssService aliyunOssService;
 
     private  final  String FILE_DIR = FileConstant.FILE_SAVE_DIR + "/file";
     @Tool(description = "Read content from a file")
@@ -34,7 +39,8 @@ public class FileOperationTool {
         try {
             FileUtil.mkdir(FILE_DIR);
             FileUtil.writeUtf8String(content,filePath);
-            return "File written successfully to: "+ filePath;
+            String upLoadUrl = aliyunOssService.upLoad(filePath);
+            return "File written successfully to: "+upLoadUrl;
         } catch (IORuntimeException e) {
             return "Error writing to file: "+ e.getMessage();
         }

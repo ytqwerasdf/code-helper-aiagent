@@ -2,58 +2,128 @@
   <div class="chat-container">
     <!-- 聊天头部 -->
     <div class="chat-header">
-      <button class="back-btn" @click="$router.back()">← 返回</button>
-      <h2>🧠 AI 超级智能体</h2>
-      <p>具备多种工具和功能的强大AI智能体</p>
+      <button class="back-btn" @click="$router.back()">
+        <span class="btn-icon">←</span>
+        <span class="btn-text">返回</span>
+      </button>
+      <div class="header-content">
+        <div class="ai-avatar-header">
+          <div class="avatar-container">
+            <div class="avatar-glow"></div>
+            <span class="avatar-text">AI</span>
+          </div>
+          <div class="header-info">
+            <h2>AI 超级智能体</h2>
+            <p>具备多种工具和功能的强大AI智能体</p>
+          </div>
+        </div>
+      </div>
     </div>
     
     <!-- 聊天消息区域 -->
     <div class="chat-messages" ref="messagesContainer">
-      <div v-for="(message, index) in messages" :key="index" :class="['message', message.type]">
+      <div v-for="(message, index) in messages" :key="index" :class="['message', message.type]" 
+           :style="{ animationDelay: `${index * 0.1}s` }">
         <div class="message-content" v-if="message.type === 'user'">
-          {{ message.content }}
+          <div class="message-avatar user-avatar">
+            <span class="avatar-icon">👤</span>
+          </div>
+          <div class="message-bubble user-bubble">
+            <div class="message-text">{{ message.content }}</div>
+          </div>
           <div class="message-actions">
-            <button class="btn-link" @click="copy(message.content)">复制</button>
+            <button class="btn-link" @click="copy(message.content)">
+              <span class="btn-icon">📋</span>
+              复制
+            </button>
           </div>
         </div>
         <div class="message-content" v-else>
-          <div v-html="message.html || message.content"></div>
-          <!-- Step内容显示区域 -->
-          <div v-if="message.stepContent" class="steps-container">
-            <div v-for="(step, index) in parseSteps(message.stepContent)" :key="index" 
-                 class="step-box">
-              <div class="step-header">
-                <span class="step-number">{{ index + 1 }}</span>
-                <span class="step-title">{{ step.title }}</span>
+          <div class="message-avatar ai-avatar">
+            <div class="avatar-glow"></div>
+            <span class="avatar-text">AI</span>
+          </div>
+          <div class="message-bubble ai-bubble">
+            <div v-html="message.html || message.content" class="message-text"></div>
+            <!-- Step内容显示区域 -->
+            <div v-if="message.stepContent" class="steps-container">
+              <div v-for="(step, stepIndex) in parseSteps(message.stepContent)" :key="stepIndex" 
+                   class="step-box" :style="{ animationDelay: `${stepIndex * 0.2}s` }">
+                <div class="step-header">
+                  <span class="step-number">{{ stepIndex + 1 }}</span>
+                  <span class="step-title">{{ step.title }}</span>
+                </div>
+                <div class="step-body" v-html="step.content"></div>
               </div>
-              <div class="step-body" v-html="step.content"></div>
             </div>
           </div>
           <div class="message-actions">
-            <button class="btn-link" @click="copy(message.content)">复制</button>
+            <button class="btn-link" @click="copy(message.content)">
+              <span class="btn-icon">📋</span>
+              复制
+            </button>
           </div>
         </div>
       </div>
       
       <!-- 加载指示器 -->
-      <div v-if="isLoading" class="message ai">
+      <div v-if="isLoading" class="message ai loading-message">
         <div class="message-content">
-          <div class="loading"></div>
-          AI智能体正在处理中...
+          <div class="loading-container">
+            <div class="ai-avatar">
+              <div class="avatar-glow"></div>
+              <span class="avatar-text">AI</span>
+            </div>
+            <div class="loading-content">
+              <div class="typing-indicator">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <div class="loading-text">AI智能体正在处理中...</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
     
     <!-- 输入区域 -->
     <div class="chat-input">
-      <input
-        v-model="inputMessage"
-        @keyup.enter="sendMessage"
-        placeholder="请输入您的问题或任务..."
-        :disabled="isLoading"
-      />
-      <button @click="sendMessage" :disabled="!inputMessage.trim() || isLoading">发送</button>
-      <button class="stop-btn" @click="stopStream" :disabled="!isLoading">停止回答</button>
+      <div class="input-container">
+        <div class="input-wrapper">
+          <input
+            v-model="inputMessage"
+            @keyup.enter="sendMessage"
+            placeholder="请输入您的问题或任务..."
+            :disabled="isLoading"
+            class="modern-input"
+          />
+          <div class="input-border"></div>
+          <div class="input-glow"></div>
+        </div>
+        <div class="button-group">
+          <button @click="sendMessage" :disabled="!inputMessage.trim() || isLoading" 
+                  class="send-btn" :class="{ 'pulse': !isLoading && inputMessage.trim() }">
+            <span class="btn-content">
+              <span class="btn-icon">🚀</span>
+              <span class="btn-text">发送</span>
+            </span>
+            <div class="btn-ripple"></div>
+          </button>
+          <button class="stop-btn" @click="stopStream" :disabled="!isLoading">
+            <span class="btn-content">
+              <span class="btn-icon">⏹️</span>
+              <span class="btn-text">停止</span>
+            </span>
+          </button>
+        </div>
+      </div>
+      <div class="input-footer">
+        <div class="status-indicator" :class="{ 'active': isLoading }">
+          <div class="status-dot"></div>
+          <span class="status-text">{{ isLoading ? 'AI正在思考...' : '准备就绪' }}</span>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -72,7 +142,8 @@ export default {
       inputMessage: '',
       isLoading: false,
       eventSource: null,
-      hasCompleted: false
+      hasCompleted: false,
+      processedMessages: new Set() // 用于去重
     }
   },
   
@@ -118,6 +189,9 @@ export default {
       // 开始AI响应
       this.isLoading = true
       
+      // 清理已处理的消息记录，开始新的对话
+      this.processedMessages.clear()
+      
       try {
         if (this.eventSource) {
           try { this.eventSource.close() } catch (_) {}
@@ -142,6 +216,14 @@ export default {
      * @param {string} data - 接收到的数据
      */
     handleSSEMessage(data) {
+      // 检查是否已经处理过这个消息，避免重复
+      const messageHash = this.hashMessage(data)
+      if (this.processedMessages.has(messageHash)) {
+        console.log('检测到重复消息，跳过处理:', data.substring(0, 50) + '...')
+        return
+      }
+      this.processedMessages.add(messageHash)
+      
       // ManusAgent: 流式返回，将消息追加到最后一条AI消息
       // 如果最后一条消息是AI消息，则追加内容
       if (this.messages.length > 0 && this.messages[this.messages.length - 1].type === 'ai') {
@@ -251,6 +333,22 @@ export default {
     async copy(text) {
       await copyText(text)
       showToast('复制成功')
+    },
+    
+    /**
+     * 生成消息的哈希值，用于去重
+     * @param {string} message - 消息内容
+     * @returns {string} 哈希值
+     */
+    hashMessage(message) {
+      // 简单的哈希函数，用于去重
+      let hash = 0
+      for (let i = 0; i < message.length; i++) {
+        const char = message.charCodeAt(i)
+        hash = ((hash << 5) - hash) + char
+        hash = hash & hash // 转换为32位整数
+      }
+      return hash.toString()
     },
     
     /**
