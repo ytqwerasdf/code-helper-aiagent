@@ -286,3 +286,107 @@ body {
   margin: 0;
   padding: 0;
 }
+
+/* 新的Step容器样式 */
+.steps-container {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.step-box {
+  border-radius: 8px;
+  padding: 0.75rem;
+  border: 1px solid;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.step-box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent 0%, currentColor 50%, transparent 100%);
+  opacity: 0.3;
+}
+
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: white;
+}
+
+.step-title {
+  font-size: 0.875rem;
+  color: inherit;
+}
+
+.step-body {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: inherit;
+  opacity: 0.9;
+}
+
+.step-body p {
+  margin: 0 0 0.5rem 0;
+}
+
+.step-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* 统一的Step样式 */
+.step-box {
+  background-color: #f8f9fa;
+  border-color: #e9ecef;
+  color: #495057;
+}
+
+.step-box .step-number {
+  background-color: #6c757d;
+}
+
+/* Step悬停效果 */
+.step-box:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .step-box {
+    padding: 0.5rem;
+  }
+  
+  .step-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  
+  .step-number {
+    width: 20px;
+    height: 20px;
+    font-size: 0.7rem;
+  }
+}

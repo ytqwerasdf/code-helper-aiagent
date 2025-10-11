@@ -19,8 +19,15 @@
         <div class="message-content" v-else>
           <div v-html="message.html || message.content"></div>
           <!-- Step内容显示区域 -->
-          <div v-if="message.stepContent" class="step-content">
-            <div v-html="message.stepHtml || message.stepContent"></div>
+          <div v-if="message.stepContent" class="steps-container">
+            <div v-for="(step, index) in parseSteps(message.stepContent)" :key="index" 
+                 class="step-box">
+              <div class="step-header">
+                <span class="step-number">{{ index + 1 }}</span>
+                <span class="step-title">{{ step.title }}</span>
+              </div>
+              <div class="step-body" v-html="step.content"></div>
+            </div>
           </div>
           <div class="message-actions">
             <button class="btn-link" @click="copy(message.content)">复制</button>
@@ -244,6 +251,38 @@ export default {
     async copy(text) {
       await copyText(text)
       showToast('复制成功')
+    },
+    
+    /**
+     * 解析Step内容，将每个Step分离成独立的对象
+     * @param {string} stepContent - 包含所有Step的字符串
+     * @returns {Array} 解析后的Step数组
+     */
+    parseSteps(stepContent) {
+      if (!stepContent) return []
+      
+      // 使用正则表达式匹配Step内容
+      const stepRegex = /Step\s*(\d+):\s*([^\n]*(?:\n(?!Step\s*\d+:)[^\n]*)*)/g
+      const steps = []
+      let match
+      
+      while ((match = stepRegex.exec(stepContent)) !== null) {
+        const stepNumber = match[1]
+        const stepText = match[2].trim()
+        
+        // 提取标题（第一行）和内容
+        const lines = stepText.split('\n')
+        const title = lines[0] || `步骤 ${stepNumber}`
+        const content = lines.slice(1).join('\n').trim() || stepText
+        
+        steps.push({
+          number: stepNumber,
+          title: title,
+          content: renderMarkdown(content)
+        })
+      }
+      
+      return steps
     },
     /**
      * 停止当前 SSE 流
