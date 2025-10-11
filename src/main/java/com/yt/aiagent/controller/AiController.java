@@ -69,6 +69,27 @@ public class AiController {
 
         return Flux.merge(dataStream, heartbeat);
     }
+    /**
+     * SSE流式调用编程助手应用(使用RAG)
+     *
+     * @param message
+     * @param chatId
+     * @return
+     */
+    @GetMapping(value = "/code_helper/chat/sse/rag",produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<String> doChatRagWithCodeAppSSE(String message, String chatId){
+        // 业务流
+        Flux<String> dataStream = codeHelperApp.doChatWithRag(message, chatId)
+                // 正常完成追加结束标识
+                .concatWith(Mono.just(ConversationSign.CONVERSATION_END));
+
+        // 心跳：注释行，防止中间网络设备超时断开
+        Flux<String> heartbeat = Flux.interval(Duration.ofSeconds(15))
+                .map(t -> ": keepalive\n\n")
+                .takeUntilOther(dataStream.ignoreElements().then());
+
+        return Flux.merge(dataStream, heartbeat);
+    }
 
     /**
      * SSE流式调用编程助手应用

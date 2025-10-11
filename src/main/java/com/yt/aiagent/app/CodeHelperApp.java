@@ -39,6 +39,19 @@ public class CodeHelperApp {
 
     private final ChatClient chatClient;
 
+    //AI知识库问答功能
+    @Resource
+    private VectorStore codeHelperVectorStore;
+
+    @Resource
+    private Advisor codeHelperRagCloudAdvisor;
+
+    @Resource
+    private VectorStore pgVectorStore;
+
+    @Resource
+    private QueryRewriter queryRewriter;
+
     private static final String SYSTEM_PROMPT = "你是一款专注于为开发者(尤其是Java开发者)提供高效、精准编程辅助的 AI 助手，需严格遵循以下设定，为不同层级用户（零基础学习者、在校学生、初 / 中 / 高级工程师、企业研发团队）提供专业服务：\n" +
             "一、核心定位与使命\n" +
             "定位：以 “提升开发效率、保障代码质量、降低编程门槛” 为核心目标，作为开发者的实时协作伙伴，覆盖从需求落地到问题调试的全流程编程场景。\n" +
@@ -155,6 +168,36 @@ public class CodeHelperApp {
 
     }
 
+    /**
+     * 和RAG知识库进行对话
+     *
+     * @param message
+     * @param chatId
+     * @return
+     */
+    public Flux<String> doChatWithRag(String message, String chatId) {
+//        String rewriteMessage = queryRewriter.doQueryRewrite(message);
+
+        return chatClient.prompt()
+                .user(message)
+                .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, chatId)
+                        .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 10))
+                //开启日志
+                .advisors(new MyLoggerAdvisor())
+                //应用RAG知识库问答
+//                .advisors(new QuestionAnswerAdvisor(codeHelperVectorStore))
+                //应用RAG检索增强服务（基于云知识库）
+//                .advisors(codeHelperRagCloudAdvisor)
+                //应用RAG检索增强服务(基于pgvector)
+                .advisors(new QuestionAnswerAdvisor(pgVectorStore))
+                //应用自定义RAG检索增强服务（文档查询器+上下文增强器）
+//                .advisors(CodeHelperRagCustomAdvisorFactory.createCodeHelperRagCustomAdvisor(
+//                        codeHelperVectorStore,"高级程序员"
+//                ))
+                .stream()
+                .content();
+    }
+
     record CodeReport(String title, List<String> solutions) {
 
     }
@@ -179,52 +222,6 @@ public class CodeHelperApp {
         return codeReport;
     }
 
-    //AI知识库问答功能
-    @Resource
-    private VectorStore codeHelperVectorStore;
-
-    @Resource
-    private Advisor codeHelperRagCloudAdvisor;
-
-    @Resource
-    private VectorStore pgVectorStore;
-
-    @Resource
-    private QueryRewriter queryRewriter;
-
-
-    /**
-     * 和RAG知识库进行对话
-     *
-     * @param message
-     * @param chatId
-     * @return
-     */
-    public String doChatWithRag(String message, String chatId) {
-        String rewriteMessage = queryRewriter.doQueryRewrite(message);
-
-        ChatResponse chatResponse = chatClient.prompt()
-                .user(rewriteMessage)
-                .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, chatId)
-                        .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 10))
-                //开启日志
-                .advisors(new MyLoggerAdvisor())
-                //应用RAG知识库问答
-                .advisors(new QuestionAnswerAdvisor(codeHelperVectorStore))
-                //应用RAG检索增强服务（基于云知识库）
-//                .advisors(codeHelperRagCloudAdvisor)
-                //应用RAG检索增强服务(基于pgvector)
-//                .advisors(new QuestionAnswerAdvisor(pgVectorStore))
-                //应用自定义RAG检索增强服务（文档查询器+上下文增强器）
-//                .advisors(CodeHelperRagCustomAdvisorFactory.createCodeHelperRagCustomAdvisor(
-//                        codeHelperVectorStore,"高级程序员"
-//                ))
-                .call()
-                .chatResponse();
-        String content = chatResponse.getResult().getOutput().getText();
-        log.info("content: {}", content);
-        return content;
-    }
 
     //调用工具能力
     @Resource

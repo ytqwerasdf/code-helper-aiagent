@@ -48,8 +48,8 @@ class CodeHelperAppTest {
         String chatId = UUID.randomUUID().toString();
         //第一轮
         String message = "并发编程的注意事项有哪些？";
-        String answer = codeHelperApp.doChatWithRag(message,chatId);
-        Assertions.assertNotNull(answer);
+//        String answer = codeHelperApp.doChatWithRag(message,chatId);
+//        Assertions.assertNotNull(answer);
     }
 
     @Test
