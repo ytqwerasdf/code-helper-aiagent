@@ -13,7 +13,7 @@ class WebSearchToolTest {
     WebSearchTool webSearchTool;
     @Test
     void searchWeb() {
-        String result = webSearchTool.searchWeb("重庆邮电大学");
+        String result = webSearchTool.spareSearchWeb("重庆邮电大学");
         Assertions.assertNotNull(result);
     }
 }

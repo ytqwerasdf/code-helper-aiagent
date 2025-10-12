@@ -1,0 +1,18 @@
+services:
+  # 后端服务
+  ai-agent-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-agent-backend
+    ports:
+      - "8123:8123"
+    networks:
+      - ai-agent-network
+    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs
+
+networks:
+  ai-agent-network:
+    driver: bridge
