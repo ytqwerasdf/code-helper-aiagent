@@ -7,6 +7,9 @@ services:
     container_name: ai-agent-backend
     ports:
       - "8123:8123"
+    environment:
+      - OSS_ACCESS_KEY_ID=${OSS_ACCESS_KEY_ID}
+      - OSS_ACCESS_KEY_SECRET=${OSS_ACCESS_KEY_SECRET}
     networks:
       - ai-agent-network
     restart: unless-stopped
