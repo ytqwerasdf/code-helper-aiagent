@@ -186,9 +186,61 @@ export default {
 }
 
 /* 响应式设计 */
-@media (max-width: 768px) {
+
+/* 大屏幕 (PC端) - 1200px以上 */
+@media (min-width: 1200px) {
   .home-container {
-    padding: 1rem;
+    padding: 3rem;
+  }
+  
+  .main-title {
+    font-size: 3.5rem;
+  }
+  
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 3rem;
+    max-width: 1400px;
+  }
+  
+  .feature-card {
+    padding: 3rem;
+  }
+}
+
+/* 中等屏幕 (平板横屏) - 768px到1199px */
+@media (max-width: 1199px) and (min-width: 768px) {
+  .home-container {
+    padding: 2rem;
+  }
+  
+  .main-title {
+    font-size: 2.8rem;
+  }
+  
+  .subtitle {
+    font-size: 1.1rem;
+  }
+  
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    max-width: 1000px;
+  }
+  
+  .feature-card {
+    padding: 2rem;
+  }
+  
+  .feature-icon {
+    font-size: 2.8rem;
+  }
+}
+
+/* 小屏幕 (平板竖屏) - 481px到767px */
+@media (max-width: 767px) and (min-width: 481px) {
+  .home-container {
+    padding: 1.5rem;
   }
   
   .main-title {
@@ -202,6 +254,7 @@ export default {
   .features-grid {
     grid-template-columns: 1fr;
     gap: 1.5rem;
+    max-width: 600px;
   }
   
   .feature-card {
@@ -211,22 +264,34 @@ export default {
   .feature-icon {
     font-size: 2.5rem;
   }
+  
+  .feature-card h3 {
+    font-size: 1.4rem;
+  }
+  
+  .feature-card p {
+    font-size: 0.95rem;
+  }
 }
 
+/* 超小屏幕 (手机) - 480px以下 */
 @media (max-width: 480px) {
   .home-container {
-    padding: 0.5rem;
+    padding: 1rem;
   }
   
   .main-title {
     font-size: 2rem;
+    line-height: 1.2;
   }
   
   .subtitle {
     font-size: 1rem;
+    line-height: 1.4;
   }
   
   .features-grid {
+    grid-template-columns: 1fr;
     gap: 1rem;
   }
   
@@ -240,15 +305,54 @@ export default {
   
   .feature-card h3 {
     font-size: 1.25rem;
+    margin-bottom: 0.75rem;
   }
   
   .feature-card p {
     font-size: 0.9rem;
+    line-height: 1.5;
+    margin-bottom: 1rem;
   }
   
   .tag {
     font-size: 0.8rem;
     padding: 0.3rem 0.6rem;
+  }
+}
+
+/* 超小屏幕 (小手机) - 360px以下 */
+@media (max-width: 360px) {
+  .home-container {
+    padding: 0.75rem;
+  }
+  
+  .main-title {
+    font-size: 1.8rem;
+  }
+  
+  .subtitle {
+    font-size: 0.9rem;
+  }
+  
+  .feature-card {
+    padding: 1rem;
+  }
+  
+  .feature-icon {
+    font-size: 1.8rem;
+  }
+  
+  .feature-card h3 {
+    font-size: 1.1rem;
+  }
+  
+  .feature-card p {
+    font-size: 0.85rem;
+  }
+  
+  .tag {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
   }
 }
 

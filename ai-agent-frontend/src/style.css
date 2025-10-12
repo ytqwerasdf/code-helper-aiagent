@@ -775,17 +775,67 @@
 }
 
 /* 响应式设计 */
-@media (max-width: 768px) {
+
+/* 大屏幕 (PC端) - 1200px以上 */
+@media (min-width: 1200px) {
+  .chat-container {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  
   .chat-header {
-    padding: 1rem;
+    padding: 2rem 3rem;
   }
   
   .chat-messages {
-    padding: 1rem;
+    padding: 2rem 3rem;
   }
   
   .chat-input {
+    padding: 2rem 3rem;
+  }
+  
+  .message-content {
+    max-width: 70%;
+  }
+}
+
+/* 中等屏幕 (平板横屏) - 768px到1199px */
+@media (max-width: 1199px) and (min-width: 768px) {
+  .chat-header {
+    padding: 1.5rem 2rem;
+  }
+  
+  .chat-messages {
+    padding: 1.5rem 2rem;
+  }
+  
+  .chat-input {
+    padding: 1.5rem 2rem;
+  }
+  
+  .message-content {
+    max-width: 75%;
+  }
+  
+  .rag-options {
+    margin: 1rem 0;
     padding: 1rem;
+  }
+}
+
+/* 小屏幕 (平板竖屏) - 481px到767px */
+@media (max-width: 767px) and (min-width: 481px) {
+  .chat-header {
+    padding: 1rem 1.5rem;
+  }
+  
+  .chat-messages {
+    padding: 1rem 1.5rem;
+  }
+  
+  .chat-input {
+    padding: 1rem 1.5rem;
   }
   
   .input-container {
@@ -865,6 +915,177 @@
   }
 }
 
+/* 超小屏幕 (手机) - 480px以下 */
+@media (max-width: 480px) {
+  .chat-header {
+    padding: 0.75rem 1rem;
+  }
+  
+  .chat-messages {
+    padding: 0.75rem 1rem;
+  }
+  
+  .chat-input {
+    padding: 0.75rem 1rem;
+  }
+  
+  .input-container {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .button-group {
+    width: 100%;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  
+  .send-btn, .stop-btn {
+    flex: 1;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.8rem;
+  }
+  
+  .message-content {
+    max-width: 90%;
+  }
+  
+  .message-bubble {
+    padding: 0.75rem 1rem;
+  }
+  
+  .message-text {
+    font-size: 0.9rem;
+  }
+  
+  .rag-options {
+    margin: 0.5rem 0;
+    padding: 0.5rem;
+  }
+  
+  .rag-text {
+    font-size: 0.75rem;
+  }
+  
+  .rag-description {
+    font-size: 0.65rem;
+    margin-left: 1.25rem;
+  }
+  
+  .rag-badge {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.3rem;
+  }
+  
+  .rag-type-selector {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+  }
+  
+  .rag-type-label {
+    font-size: 0.75rem;
+  }
+  
+  .rag-type-select {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.75rem;
+  }
+  
+  .rag-type-description {
+    font-size: 0.65rem;
+    padding: 0.3rem;
+  }
+  
+  .rag-type-badge {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.3rem;
+  }
+  
+  .usage-limit {
+    margin-top: 0.3rem;
+  }
+  
+  .limit-text {
+    font-size: 0.65rem;
+  }
+  
+  .remaining-count {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.3rem;
+  }
+  
+  .back-btn {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+  }
+  
+  .header-info h2 {
+    font-size: 1.1rem;
+  }
+  
+  .header-info p {
+    font-size: 0.8rem;
+  }
+}
+
+/* 超小屏幕 (小手机) - 360px以下 */
+@media (max-width: 360px) {
+  .chat-header {
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .chat-messages {
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .chat-input {
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .message-content {
+    max-width: 95%;
+  }
+  
+  .message-bubble {
+    padding: 0.6rem 0.8rem;
+  }
+  
+  .message-text {
+    font-size: 0.85rem;
+  }
+  
+  .rag-options {
+    padding: 0.4rem;
+  }
+  
+  .rag-text {
+    font-size: 0.7rem;
+  }
+  
+  .rag-description {
+    font-size: 0.6rem;
+    margin-left: 1rem;
+  }
+  
+  .send-btn, .stop-btn {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.75rem;
+  }
+  
+  .back-btn {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.75rem;
+  }
+  
+  .header-info h2 {
+    font-size: 1rem;
+  }
+  
+  .header-info p {
+    font-size: 0.75rem;
+  }
+}
+
 /* Toast 样式 */
 .toast {
   position: fixed;
@@ -877,6 +1098,16 @@
   border-radius: 6px;
   font-size: 0.875rem;
   z-index: 10000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease-out;
+  max-width: 90%;
+  word-wrap: break-word;
+}
+
+.toast.show {
+  opacity: 1;
+  visibility: visible;
   animation: toastSlideIn 0.3s ease-out;
 }
 
@@ -888,5 +1119,24 @@
   100% {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Toast 响应式样式 */
+@media (max-width: 768px) {
+  .toast {
+    top: 15px;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.8rem;
+    max-width: 95%;
+  }
+}
+
+@media (max-width: 480px) {
+  .toast {
+    top: 10px;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.75rem;
+    max-width: 98%;
   }
 }

@@ -93,6 +93,20 @@ html, body {
   background: #ffffff;
   line-height: 1.6;
   font-size: 14px;
+  overflow-x: hidden;
+}
+
+/* 响应式字体大小 */
+@media (max-width: 480px) {
+  html, body {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 360px) {
+  html, body {
+    font-size: 12px;
+  }
 }
 
 #app {
