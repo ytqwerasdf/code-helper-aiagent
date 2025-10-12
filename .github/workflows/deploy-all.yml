@@ -1,0 +1,24 @@
+name: 全量部署
+
+on:
+  workflow_dispatch: # 仅手动触发
+    inputs:
+      deploy_backend:
+        description: '部署后端'
+        required: false
+        default: true
+        type: boolean
+      deploy_frontend:
+        description: '部署前端'
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  deploy-backend:
+    if: ${{ github.event.inputs.deploy_backend == 'true' }}
+    uses: ./.github/workflows/deploy-backend.yml
+
+  deploy-frontend:
+    if: ${{ github.event.inputs.deploy_frontend == 'true' }}
+    uses: ./.github/workflows/deploy-frontend.yml

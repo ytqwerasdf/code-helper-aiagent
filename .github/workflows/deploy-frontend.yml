@@ -1,0 +1,120 @@
+name: 前端自动部署
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'ai-agent-frontend/**'
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  deploy-frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置Node.js环境
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: ai-agent-frontend/package-lock.json
+
+      - name: 安装前端依赖
+        run: |
+          cd ai-agent-frontend
+          npm ci
+
+      - name: 构建前端
+        run: |
+          cd ai-agent-frontend
+          npm run build
+
+      - name: 打包前端构建产物
+        run: |
+          cd ai-agent-frontend
+          tar -czf dist.tar.gz -C dist .
+
+      - name: 传输前端包并重启nginx
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.REMOTE_PORT || 22 }}
+          script: |
+            echo "=== 开始前端部署流程 ==="
+            
+            # 1. 备份当前前端文件
+            if [ -d "/opt/ai-agent-frontend" ]; then
+                echo "1. 备份当前前端文件..."
+                tar -czf /opt/ai-agent-frontend-backup-$(date +%Y%m%d-%H%M%S).tar.gz -C /opt ai-agent-frontend
+            fi
+            
+            echo "2. 准备接收前端包..."
+            mkdir -p /tmp/frontend-deploy
+
+      - name: 传输前端包到服务器
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.REMOTE_PORT || 22 }}
+          source: "ai-agent-frontend/dist.tar.gz"
+          target: "/tmp/frontend-deploy/"
+
+      - name: 解压前端包并重启nginx
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.REMOTE_PORT || 22 }}
+          script: |
+            echo "=== 继续前端部署流程 ==="
+            
+            # 3. 解压新的前端包
+            if [ -f "/tmp/frontend-deploy/dist.tar.gz" ]; then
+                echo "3. 解压新的前端包..."
+                rm -rf /opt/ai-agent-frontend/*
+                tar -xzf /tmp/frontend-deploy/dist.tar.gz -C /opt/ai-agent-frontend/
+                echo "✅ 前端文件部署成功"
+            
+                # 显示部署的文件
+                echo "部署的文件："
+                ls -la /opt/ai-agent-frontend/
+            else
+                echo "❌ 错误：前端包传输失败"
+                exit 1
+            fi
+            
+            # 4. 重启nginx服务
+            echo "4. 重启nginx服务..."
+            systemctl reload nginx
+            sleep 2
+            
+            # 5. 检查nginx状态
+            echo "5. 检查nginx状态..."
+            if systemctl is-active --quiet nginx; then
+                echo "✅ nginx服务运行正常"
+            else
+                echo "❌ nginx服务异常，尝试重启..."
+                systemctl restart nginx
+                sleep 3
+                if systemctl is-active --quiet nginx; then
+                    echo "✅ nginx服务重启成功"
+                else
+                    echo "❌ nginx服务重启失败"
+                    systemctl status nginx
+                    exit 1
+                fi
+            fi
+            
+            # 6. 清理临时文件
+            rm -rf /tmp/frontend-deploy/
+            
+            echo "=== 前端部署完成 ==="
