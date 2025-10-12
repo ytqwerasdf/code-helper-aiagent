@@ -48,8 +48,7 @@
             <span class="avatar-text">AI</span>
           </div>
           <div class="message-bubble ai-bubble">
-            <div v-html="message.html || message.content" class="message-text"></div>
-            <!-- Step内容显示区域 -->
+            <!-- Step内容显示区域 - 移到响应文字上方 -->
             <div v-if="message.stepContent" class="steps-container">
               <div v-for="(step, stepIndex) in parseSteps(message.stepContent)" :key="stepIndex" 
                    class="step-box" :style="{ animationDelay: `${stepIndex * 0.2}s` }">
@@ -60,6 +59,7 @@
                 <div class="step-body" v-html="step.content"></div>
               </div>
             </div>
+            <div v-html="message.html || message.content" class="message-text"></div>
           </div>
           <div class="message-actions">
             <button class="btn-link" @click="copy(message.content)">
