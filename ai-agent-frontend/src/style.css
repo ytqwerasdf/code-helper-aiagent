@@ -640,6 +640,63 @@
   background: #ffffff;
   border: 1px solid #e5e5e5;
   border-radius: 8px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.rag-type-selector.collapsed {
+  padding: 0.5rem 1rem;
+}
+
+.rag-type-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.rag-type-selector.collapsed .rag-type-header {
+  border-bottom: 1px solid #e5e5e5;
+  margin-bottom: 0;
+}
+
+.rag-type-header:hover {
+  background: #f9f9f9;
+  border-radius: 4px;
+  padding: 0.5rem;
+  margin: -0.5rem;
+}
+
+.collapse-indicator {
+  font-size: 0.75rem;
+  color: #666666;
+  background: #f0f0f0;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+.collapse-indicator.collapsed {
+  background: #e0e0e0;
+  color: #999999;
+}
+
+.rag-type-content {
+  transition: all 0.3s ease;
+  opacity: 1;
+  max-height: 200px;
+  overflow: hidden;
+}
+
+.rag-type-selector.collapsed .rag-type-content {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
 }
 
 .rag-type-label {
@@ -858,6 +915,16 @@
     gap: 0.75rem;
   }
   
+  .input-wrapper {
+    width: 100%;
+    flex: none;
+  }
+  
+  .modern-input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
   .button-group {
     width: 100%;
     justify-content: center;
@@ -949,6 +1016,16 @@
     gap: 0.5rem;
   }
   
+  .input-wrapper {
+    width: 100%;
+    flex: none;
+  }
+  
+  .modern-input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
   .button-group {
     width: 100%;
     justify-content: center;
@@ -995,6 +1072,16 @@
   .rag-type-selector {
     margin-top: 0.5rem;
     padding: 0.5rem;
+    touch-action: pan-y;
+  }
+  
+  .rag-type-selector.collapsed {
+    padding: 0.3rem 0.5rem;
+  }
+  
+  .rag-type-header {
+    padding: 0.3rem 0;
+    min-height: 2rem;
   }
   
   .rag-type-label {
@@ -1014,6 +1101,11 @@
   .rag-type-badge {
     font-size: 0.65rem;
     padding: 0.15rem 0.3rem;
+  }
+  
+  .collapse-indicator {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
   }
   
   .usage-limit {

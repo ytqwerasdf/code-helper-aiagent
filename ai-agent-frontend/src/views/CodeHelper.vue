@@ -124,27 +124,41 @@
             </span>
           </label>
           <div class="rag-description">
-            RAG模式将使用知识库检索来提供更准确的编程建议
+            {{ useRAG ? getRAGTypeDescription(ragType) : 'RAG模式将使用知识库检索来提供更准确的编程建议' }}
           </div>
         </div>
         
         <!-- RAG类型选择 -->
-        <div class="rag-type-selector" v-if="useRAG">
-          <label class="rag-type-label">
-            <span class="rag-type-icon">⚙️</span>
-            <span class="rag-type-text">RAG类型选择：</span>
-          </label>
-          <select 
-            v-model="ragType" 
-            :disabled="isLoading"
-            class="rag-type-select"
-          >
-            <option value="memory">基于内存的RAG</option>
-            <option value="local">基于本地数据库的RAG</option>
-            <option value="cloud">基于云端数据库的RAG</option>
-          </select>
-          <div class="rag-type-description">
-            {{ getRAGTypeDescription(ragType) }}
+        <div 
+          class="rag-type-selector" 
+          v-if="useRAG"
+          :class="{ 'collapsed': ragTypeSelectorCollapsed }"
+          @touchstart="handleTouchStart"
+          @touchmove="handleTouchMove"
+          @touchend="handleTouchEnd"
+        >
+          <div class="rag-type-header" @click="toggleRAGTypeSelector">
+            <label class="rag-type-label">
+              <span class="rag-type-icon">⚙️</span>
+              <span class="rag-type-text">RAG类型选择：</span>
+            </label>
+            <span class="collapse-indicator" :class="{ 'collapsed': ragTypeSelectorCollapsed }">
+              {{ ragTypeSelectorCollapsed ? '展开' : '收起' }}
+            </span>
+          </div>
+          <div class="rag-type-content" v-show="!ragTypeSelectorCollapsed">
+            <select 
+              v-model="ragType" 
+              :disabled="isLoading"
+              class="rag-type-select"
+            >
+              <option value="memory">基于内存的RAG</option>
+              <option value="local">基于本地数据库的RAG</option>
+              <option value="cloud">基于云端数据库的RAG</option>
+            </select>
+            <div class="rag-type-description">
+              {{ getRAGTypeDescription(ragType) }}
+            </div>
           </div>
         </div>
       </div>
@@ -180,7 +194,10 @@ export default {
       eventSource: null,
       hasCompleted: false,
       useRAG: false,
-      ragType: 'memory'
+      ragType: 'memory',
+      ragTypeSelectorCollapsed: false,
+      touchStartY: 0,
+      touchEndY: 0
     }
   },
   
@@ -401,6 +418,48 @@ export default {
         cloud: '云端RAG'
       }
       return names[type] || names.memory
+    },
+    
+    /**
+     * 切换RAG类型选择器的折叠状态
+     */
+    toggleRAGTypeSelector() {
+      this.ragTypeSelectorCollapsed = !this.ragTypeSelectorCollapsed
+    },
+    
+    /**
+     * 处理触摸开始事件
+     * @param {TouchEvent} event - 触摸事件
+     */
+    handleTouchStart(event) {
+      this.touchStartY = event.touches[0].clientY
+    },
+    
+    /**
+     * 处理触摸移动事件
+     * @param {TouchEvent} event - 触摸事件
+     */
+    handleTouchMove(event) {
+      // 阻止默认滚动行为，让我们的手势处理生效
+      event.preventDefault()
+    },
+    
+    /**
+     * 处理触摸结束事件
+     * @param {TouchEvent} event - 触摸事件
+     */
+    handleTouchEnd(event) {
+      this.touchEndY = event.changedTouches[0].clientY
+      const deltaY = this.touchStartY - this.touchEndY
+      
+      // 如果向下滑动超过50px，则折叠RAG类型选择器
+      if (deltaY < -50 && !this.ragTypeSelectorCollapsed) {
+        this.ragTypeSelectorCollapsed = true
+      }
+      // 如果向上滑动超过50px，则展开RAG类型选择器
+      else if (deltaY > 50 && this.ragTypeSelectorCollapsed) {
+        this.ragTypeSelectorCollapsed = false
+      }
     }
   }
 }
