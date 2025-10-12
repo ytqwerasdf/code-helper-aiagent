@@ -3,7 +3,12 @@ import { marked } from 'marked'
 // 配置 marked（可按需扩展）
 marked.setOptions({
   breaks: true,
-  gfm: true
+  gfm: true,
+  // 启用自动链接功能
+  pedantic: false,
+  sanitize: false,
+  smartLists: true,
+  smartypants: false
 })
 
 /**
@@ -23,6 +28,42 @@ function hasMixedLanguages(text) {
 }
 
 /**
+ * 保护URL，避免被中英文分离功能误处理
+ * @param {string} text 输入文本
+ * @returns {object} 包含保护后文本和URL映射的对象
+ */
+function protectUrls(text) {
+  const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`\[\]()]+)/g
+  const urlMap = new Map()
+  let protectedText = text
+  let urlIndex = 0
+  
+  // 将所有URL替换为占位符
+  protectedText = protectedText.replace(urlRegex, (url) => {
+    const placeholder = `__URL_PLACEHOLDER_${urlIndex}__`
+    urlMap.set(placeholder, url)
+    urlIndex++
+    return placeholder
+  })
+  
+  return { protectedText, urlMap }
+}
+
+/**
+ * 恢复被保护的URL
+ * @param {string} text 包含占位符的文本
+ * @param {Map} urlMap URL映射表
+ * @returns {string} 恢复URL后的文本
+ */
+function restoreUrls(text, urlMap) {
+  let restoredText = text
+  for (const [placeholder, url] of urlMap) {
+    restoredText = restoredText.replace(new RegExp(placeholder, 'g'), url)
+  }
+  return restoredText
+}
+
+/**
  * 将中英文内容分离
  * @param {string} text 输入文本
  * @returns {string} 分离后的HTML
@@ -30,8 +71,11 @@ function hasMixedLanguages(text) {
 function separateChineseEnglish(text) {
   if (!text) return ''
   
+  // 先保护URL，避免被分割
+  const { protectedText, urlMap } = protectUrls(text)
+  
   // 按段落分割
-  const paragraphs = text.split(/\n\s*\n/)
+  const paragraphs = protectedText.split(/\n\s*\n/)
   const separatedParagraphs = []
   
   for (const paragraph of paragraphs) {
@@ -96,7 +140,85 @@ function separateChineseEnglish(text) {
     }
   }
   
-  return separatedParagraphs.join('\n\n')
+  // 恢复URL
+  const result = separatedParagraphs.join('\n\n')
+  return restoreUrls(result, urlMap)
+}
+
+/**
+ * 自动将URL转换为markdown链接格式
+ * @param {string} text 输入文本
+ * @returns {string} 转换后的文本
+ */
+function autoLinkUrls(text) {
+  if (!text) return ''
+  
+  // 更精确的URL正则表达式，匹配http/https协议
+  const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`\[\]()]+)/g
+  
+  return text.replace(urlRegex, (url) => {
+    // 清理URL末尾的标点符号
+    url = url.replace(/[.,;:!?]+$/, '')
+    
+    // 如果URL已经包含在markdown链接中，则不处理
+    if (text.includes(`[${url}](${url})`) || text.includes(`](${url})`)) {
+      return url
+    }
+    
+    // 生成链接文本，如果URL太长则截断
+    let linkText = url
+    if (url.length > 60) {
+      // 尝试保留域名部分
+      try {
+        const urlObj = new URL(url)
+        const domain = urlObj.hostname
+        if (domain.length < 30) {
+          linkText = `${domain}...`
+        } else {
+          linkText = url.substring(0, 57) + '...'
+        }
+      } catch (e) {
+        linkText = url.substring(0, 57) + '...'
+      }
+    }
+    
+    return `[${linkText}](${url})`
+  })
+}
+
+/**
+ * 在HTML中直接处理URL链接
+ * @param {string} html 输入HTML
+ * @returns {string} 处理后的HTML
+ */
+function processUrlsInHtml(html) {
+  if (!html) return ''
+  
+  // 匹配不在链接标签内的URL
+  const urlRegex = /(?!<a[^>]*>)(https?:\/\/[^\s<>"{}|\\^`\[\]()]+)(?![^<]*<\/a>)/g
+  
+  return html.replace(urlRegex, (url) => {
+    // 清理URL末尾的标点符号
+    url = url.replace(/[.,;:!?]+$/, '')
+    
+    // 生成链接文本
+    let linkText = url
+    if (url.length > 60) {
+      try {
+        const urlObj = new URL(url)
+        const domain = urlObj.hostname
+        if (domain.length < 30) {
+          linkText = `${domain}...`
+        } else {
+          linkText = url.substring(0, 57) + '...'
+        }
+      } catch (e) {
+        linkText = url.substring(0, 57) + '...'
+      }
+    }
+    
+    return `<a href="${url}" target="_blank" style="color: #0066cc; text-decoration: none; border-bottom: 1px solid transparent; transition: all 0.3s ease;" onmouseover="this.style.borderBottomColor='#0066cc'" onmouseout="this.style.borderBottomColor='transparent'">${linkText}</a>`
+  })
 }
 
 /**
@@ -113,11 +235,19 @@ export function renderMarkdown(text) {
   // 处理双换行符，确保段落分隔
   processedText = processedText.replace(/\n\n/g, '\n\n')
   
+  // 自动将URL转换为markdown链接
+  processedText = autoLinkUrls(processedText)
+  
   // 检测并分离中英文内容
   const separatedText = separateChineseEnglish(processedText)
   
   // 渲染Markdown
-  return marked.parse(separatedText)
+  let html = marked.parse(separatedText)
+  
+  // 在HTML中再次处理URL，确保所有URL都被转换为链接
+  html = processUrlsInHtml(html)
+  
+  return html
 }
 
 
