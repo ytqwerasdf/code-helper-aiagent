@@ -2,6 +2,7 @@
 application-local.yml
 mcp-servers.json
 mcp-servers-abandoned.json
+.mvn
 tmp
 node_modules
 dist
