@@ -66,6 +66,7 @@ public class StreamToolCallAgent extends ReActAgent {
         // 收集所有响应片段
         List<ChatResponse> allResponses = new ArrayList<>();
 
+        log.info("开始流式调用，消息数量: {}", messageList.size());
         try {
             // 流式调用并实时输出到SSE
             Flux<ChatResponse> responseFlux = getChatClient().prompt(prompt)
@@ -76,6 +77,9 @@ public class StreamToolCallAgent extends ReActAgent {
 
             // 处理流式响应
             responseFlux.doOnNext(response -> {
+                        log.debug("收到响应: hasToolCalls={}, text={}",
+                                response.hasToolCalls(),
+                                response.getResult() != null ? response.getResult().getOutput().getText() : "null");
                         //收集所有响应
                         allResponses.add(response);
                         // 实时输出到SSE
@@ -91,16 +95,30 @@ public class StreamToolCallAgent extends ReActAgent {
                         }
                     })
                     .doOnComplete(() -> {
-                        // 流式调用完成，构建完整响应
-                        if (!allResponses.isEmpty()) {
+                        log.info("流式调用完成，共收到 {} 个响应", allResponses.size());
 
-                            for (ChatResponse response : allResponses) {
-                                if (response.hasToolCalls()){
-                                    this.toolCallChatResponse = response;
-                                    break;
-                                }
+                        // 查找包含工具调用的响应
+                        for (ChatResponse response : allResponses) {
+                            if (response.hasToolCalls()){
+                                this.toolCallChatResponse = response;
+                                log.info("找到工具调用响应");
+                                break;
                             }
+                        }
 
+                        // 如果没有工具调用，处理纯文本响应
+                        if (this.toolCallChatResponse == null && !allResponses.isEmpty()) {
+                            log.info("没有工具调用，处理纯文本响应");
+                            // 可以选择使用最后一个响应或者抛出特定异常
+                            ChatResponse lastResponse = allResponses.getLast();
+                            if (lastResponse.getResult() != null && lastResponse.getResult().getOutput() != null) {
+                                String text = lastResponse.getResult().getOutput().getText();
+                                log.info("AI返回纯文本响应: {}", text);
+                                // 将响应添加到消息列表
+                                getMessageList().add(new AssistantMessage(text));
+                                // 设置一个标志表示这是纯文本响应
+                                this.toolCallChatResponse = lastResponse;
+                            }
                         }
                     })
                     .doOnError(error -> {
@@ -114,34 +132,44 @@ public class StreamToolCallAgent extends ReActAgent {
                     .blockLast(); // 等待完成
 
             if (this.toolCallChatResponse == null) {
-                this.toolCallChatResponse = allResponses.getLast();
+                throw new RuntimeException("No response received");
             }
 
             // 解析工具调用结果
             AssistantMessage assistantMessage = this.toolCallChatResponse.getResult().getOutput();
-            List<AssistantMessage.ToolCall> toolCallList = assistantMessage.getToolCalls();
 
+            // 检查是否有工具调用
+            if (assistantMessage.getToolCalls() == null || assistantMessage.getToolCalls().isEmpty()) {
+                // 纯文本响应，没有工具调用
+                String result = assistantMessage.getText();
+                getResponseList().add(result);
+                log.info(getName() + "返回纯文本响应，没有工具调用");
+                getMessageList().add(assistantMessage);
+                return false; // 表示不需要执行工具
+            }
+
+            // 有工具调用的情况
+            List<AssistantMessage.ToolCall> toolCallList = assistantMessage.getToolCalls();
             String result = assistantMessage.getText();
             getResponseList().add(result);
             log.info(getName() + "选择了" + toolCallList.size() + " 个工具来使用："+toolCallList.getFirst().name());
 
-            if (toolCallList.isEmpty()) {
-                getMessageList().add(assistantMessage);
-                return false;
-            } else {
-                return true;
-            }
+            return true; // 表示需要执行工具
         } catch (Exception e) {
-            log.error(getName() + "的思考过程遇到了问题：" + e.getMessage());
-            getMessageList().add(new AssistantMessage("处理时遇到了错误：" + e.getMessage()));
+            String errorMessage = e.getMessage();
+            if (errorMessage == null) {
+                errorMessage = e.getClass().getSimpleName() + ": " + e;
+            }
+            log.error(getName() + "的思考过程遇到了问题：" + errorMessage, e);
+            getMessageList().add(new AssistantMessage("处理时遇到了错误：" + errorMessage));
             return false;
         }
     }
 
     @Override
     public String act() {
-        if(!toolCallChatResponse.hasToolCalls()){
-            log.info("步骤{}，没有工具需要调用",getCurrentStep());
+        if (toolCallChatResponse == null || !toolCallChatResponse.hasToolCalls()) {
+            log.info("步骤{}，没有工具需要调用", getCurrentStep());
             return "没有工具需要调用";
         }
         Prompt prompt = new Prompt(getMessageList(), this.chatOptions);
