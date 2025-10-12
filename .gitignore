@@ -4,6 +4,8 @@ mcp-servers.json
 mcp-servers-abandoned.json
 tmp
 node_modules
+dist
+dist.zip
 HELP.md
 target/
 .mvn/wrapper/maven-wrapper.jar
