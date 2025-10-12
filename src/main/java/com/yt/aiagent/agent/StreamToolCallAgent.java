@@ -114,7 +114,7 @@ public class StreamToolCallAgent extends ReActAgent {
                     .blockLast(); // 等待完成
 
             if (this.toolCallChatResponse == null) {
-                throw new RuntimeException("No response received");
+                this.toolCallChatResponse = allResponses.getLast();
             }
 
             // 解析工具调用结果
