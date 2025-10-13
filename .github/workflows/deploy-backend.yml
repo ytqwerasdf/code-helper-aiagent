@@ -84,7 +84,7 @@ jobs:
             # 6. 健康检查
             echo "6. 执行健康检查..."
             for i in {1..5}; do
-                if curl -f http://localhost:8123/api/actuator/health > /dev/null 2>&1; then
+                if curl -f http://localhost:8123/api/ai/health > /dev/null 2>&1; then
                     echo "✅ 服务健康检查通过！"
                     break
                 else

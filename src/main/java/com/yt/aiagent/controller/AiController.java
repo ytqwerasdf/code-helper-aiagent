@@ -36,6 +36,9 @@ public class AiController {
     @Autowired
     private RetryTemplate retryTemplate;
 
+    @GetMapping("/health")
+    public boolean healthCheck(){return true;}
+
     /**
      * 同步调用编程助手应用
      *
