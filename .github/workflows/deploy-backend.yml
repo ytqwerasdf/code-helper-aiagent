@@ -34,7 +34,6 @@ jobs:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: 22
           source: "target/ai-agent-0.0.1-SNAPSHOT.jar"
           target: "/tmp/"
@@ -45,7 +44,6 @@ jobs:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: 22
           script: |
             cd /opt/ai-agent

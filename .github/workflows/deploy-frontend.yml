@@ -44,7 +44,6 @@ jobs:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: 22
           script: |
             echo "=== 开始前端部署流程 ==="
@@ -64,7 +63,6 @@ jobs:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: 22
           source: "ai-agent-frontend/dist.tar.gz"
           target: "/tmp/frontend-deploy/"
@@ -75,7 +73,6 @@ jobs:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: 22
           script: |
             echo "=== 继续前端部署流程 ==="
