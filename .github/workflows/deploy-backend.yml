@@ -36,7 +36,7 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: 22
           source: "target/ai-agent-0.0.1-SNAPSHOT.jar"
-          target: "/tmp/ai-agent-0.0.1-SNAPSHOT.jar"
+          target: "/tmp/"
 
       - name: restartServer
         uses: appleboy/ssh-action@v1.0.3
