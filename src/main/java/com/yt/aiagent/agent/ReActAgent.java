@@ -93,7 +93,7 @@ public abstract class ReActAgent extends BaseAgent {
             if (lastMessage instanceof AssistantMessage) {
                 String content = lastMessage.getText();
                 // 如果是简单的问候回复，可以结束
-                if (content.contains("你好") || content.contains("Hello") || content.contains("Let me know how") || content.contains("Please letme know") ||
+                if (content.contains("你好") || content.contains("Hello") || content.contains("Let me know how") || content.contains("letme know") ||
                         content.contains("有什么可以帮助") || content.contains("How can I help")) {
                     return true;
                 }
