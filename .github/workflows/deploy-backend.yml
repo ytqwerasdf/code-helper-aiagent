@@ -1,4 +1,4 @@
-name: 后端自动部署
+name: Deployment-backend
 
 on:
   push:
@@ -15,36 +15,36 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 检出代码
+      - name: CheckoutCode
         uses: actions/checkout@v4
 
-      - name: 设置JDK
+      - name: SetupJDK
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
           cache: maven
 
-      - name: 构建并打包项目
+      - name: mvnBuild
         run: mvn clean package -DskipTests
 
-      - name: 传输jar包到服务器
+      - name: transToVPS
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.REMOTE_PORT || 22 }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: 22
           source: "target/ai-agent-0.0.1-SNAPSHOT.jar"
           target: "/tmp/"
 
-      - name: 停止服务并重启
+      - name: restartServer
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.REMOTE_PORT || 22 }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: 22
           script: |
             cd /opt/ai-agent
             

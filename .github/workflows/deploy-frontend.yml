@@ -1,4 +1,4 @@
-name: 前端自动部署
+name: Deployment-frontend
 
 on:
   push:
@@ -13,80 +13,84 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 检出代码
+      - name: CheckoutCode
         uses: actions/checkout@v4
 
-      - name: 设置Node.js环境
+      - name: InstallNode
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
           cache-dependency-path: ai-agent-frontend/package-lock.json
 
-      - name: 安装前端依赖
+      - name: InstallDependencies
         run: |
           cd ai-agent-frontend
           npm ci
 
-      - name: 构建前端
+      - name: Build
         run: |
           cd ai-agent-frontend
           npm run build
 
-      - name: 打包前端构建产物
+      - name: Package
         run: |
           cd ai-agent-frontend
-          tar -czf dist.tar.gz -C dist .
+          tar -czf dist.tar.gz dist
 
-      - name: 传输前端包并重启nginx
+      - name: SpareOriginFile
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.REMOTE_PORT || 22 }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: 22
           script: |
             echo "=== 开始前端部署流程 ==="
             
-            # 1. 备份当前前端文件
-            if [ -d "/opt/ai-agent-frontend" ]; then
-                echo "1. 备份当前前端文件..."
-                tar -czf /opt/ai-agent-frontend-backup-$(date +%Y%m%d-%H%M%S).tar.gz -C /opt ai-agent-frontend
+            # 1. 备份当前前端dist文件
+            if [ -d "/opt/ai-agent-frontend/dist" ]; then
+                echo "1. 备份当前前端dist文件..."
+                tar -czf /opt/ai-agent-frontend-dist-backup-$(date +%Y%m%d-%H%M%S).tar.gz -C /opt/ai-agent-frontend dist
             fi
             
             echo "2. 准备接收前端包..."
             mkdir -p /tmp/frontend-deploy
 
-      - name: 传输前端包到服务器
+      - name: TransToVPS
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.REMOTE_PORT || 22 }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: 22
           source: "ai-agent-frontend/dist.tar.gz"
           target: "/tmp/frontend-deploy/"
 
-      - name: 解压前端包并重启nginx
+      - name: restart
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.REMOTE_PORT || 22 }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: 22
           script: |
             echo "=== 继续前端部署流程 ==="
             
-            # 3. 解压新的前端包
+            # 3. 解压新的前端包到上一级目录
             if [ -f "/tmp/frontend-deploy/dist.tar.gz" ]; then
-                echo "3. 解压新的前端包..."
-                rm -rf /opt/ai-agent-frontend/*
+                echo "3. 解压新的前端包到上一级目录..."
+                # 确保目录存在
+                mkdir -p /opt/ai-agent-frontend
+                # 清空dist目录
+                rm -rf /opt/ai-agent-frontend/dist
+                # 解压到上一级目录
                 tar -xzf /tmp/frontend-deploy/dist.tar.gz -C /opt/ai-agent-frontend/
                 echo "✅ 前端文件部署成功"
             
                 # 显示部署的文件
                 echo "部署的文件："
-                ls -la /opt/ai-agent-frontend/
+                ls -la /opt/ai-agent-frontend/dist/
             else
                 echo "❌ 错误：前端包传输失败"
                 exit 1
