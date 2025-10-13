@@ -38,6 +38,10 @@ jobs:
           cd ai-agent-frontend
           tar -czf dist.tar.gz dist
 
+      - name: StageArtifactToRoot
+        run: |
+          cp ai-agent-frontend/dist.tar.gz dist.tar.gz
+
       - name: SpareOriginFile
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -64,7 +68,7 @@ jobs:
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: 22
-          source: "ai-agent-frontend/dist.tar.gz"
+          source: "dist.tar.gz"
           target: "/tmp/frontend-deploy/"
 
       - name: restart
