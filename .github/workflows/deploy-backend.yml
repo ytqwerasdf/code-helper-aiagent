@@ -63,9 +63,11 @@ jobs:
             
             # 3. 移动新jar包到目标位置
             echo "3. 部署新jar包..."
-            if [ -f "/tmp/ai-agent-0.0.1-SNAPSHOT.jar" ]; then
-                mv /tmp/ai-agent-0.0.1-SNAPSHOT.jar agent-backend/
+            if [ -f "/tmp/target/ai-agent-0.0.1-SNAPSHOT.jar" ]; then
+                mv /tmp/target/ai-agent-0.0.1-SNAPSHOT.jar agent-backend/
                 echo "✅ jar包部署成功，文件大小：$(ls -lh agent-backend/ai-agent-0.0.1-SNAPSHOT.jar | awk '{print $5}')"
+                # 清理临时目录
+                rm -rf /tmp/target
             else
                 echo "❌ 错误：临时jar包不存在"
                 exit 1
