@@ -89,14 +89,44 @@ public abstract class ReActAgent extends BaseAgent {
     private boolean shouldEndConversation() {
         // 检查最后一条助手消息
         if (!getMessageList().isEmpty()) {
-            Message lastMessage = getMessageList().getLast();
-            if (lastMessage instanceof AssistantMessage) {
-                String content = lastMessage.getText();
-                // 如果是简单的问候回复，可以结束
-                return content.contains("你好") || content.contains("Hello") || content.contains("Let me know how") || content.contains("letme") ||
-                        content.contains("有什么可以帮助") || content.contains("How can I help");
+            for (Message message : getMessageList()) {
+                return isSimpleGreeting(message.getText());
             }
         }
+        return false;
+    }
+
+    private static boolean isSimpleGreeting(String raw) {
+        if (raw == null) return false;
+
+        // 1) 规范化：小写、去除所有空白、去除标点/特殊符号（保留中英文）
+        String norm = raw.toLowerCase()
+                .replaceAll("\\s+", "")                 // 去空白
+                .replaceAll("[\\p{Punct}\\p{IsPunctuation}]+", ""); // 去标点
+
+        // 2) 快速关键词（中文）
+        if (norm.contains("你好") || norm.contains("您好") || norm.contains("有什么可以帮助") || norm.contains("需要什么帮助")) {
+            return true;
+        }
+
+        // 3) 英文关键词（考虑粘连/无空格场景）
+        // hi/hello/hey
+        if (norm.contains("hi") || norm.contains("hello") || norm.contains("hey")) return true;
+
+        // howcan i help/assist you / how can i help
+        if (norm.contains("howcanihelp") || norm.contains("howcaniassist") || norm.contains("howcanihelpyou") || norm.contains("howcaniassistyou"))
+            return true;
+
+        // let me know how ... (常见模板的压缩形态)
+        if (norm.contains("letmeknowhow")) return true;
+
+        // i'm here to help / im here to help（考虑省略撇号）
+        if (norm.contains("imheretohelp") || norm.contains("iamheretohelp")) return true;
+
+        // Manus/系统开场白（你示例中常见）
+        if (norm.contains("immanus") || norm.contains("allcapableaiassistant") || norm.contains("iamhere tohelp".replace(" ", "")))
+            return true;
+
         return false;
     }
 }
