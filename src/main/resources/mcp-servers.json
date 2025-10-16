@@ -4,7 +4,7 @@
       "command": "npx",
       "args": ["-y", "@amap/amap-maps-mcp-server"],
       "env": {
-        "AMAP_MAPS_API_KEY": "935fb6fc3901785d517b6c79438bf604"
+        "AMAP_MAPS_API_KEY": "${env.AMAP_MAPS_API_KEY}"
       }
     }
   }
