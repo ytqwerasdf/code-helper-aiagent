@@ -1,6 +1,8 @@
 package com.yt.aiagent.app;
 
 import com.yt.aiagent.advisor.MyLoggerAdvisor;
+import com.yt.aiagent.advisor.RagAdvisor;
+import com.yt.aiagent.advisor.ReRankService;
 import com.yt.aiagent.advisor.ReReadingAdvisor;
 import com.yt.aiagent.chatmemory.FileBasedChatMemory;
 import com.yt.aiagent.constant.ConversationSign;
@@ -18,6 +20,7 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
+import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
@@ -48,6 +51,9 @@ public class CodeHelperApp {
 
     @Resource
     private VectorStore pgVectorStore;
+
+    @Resource
+    private ReRankService reRankService;
 
     @Resource
     private QueryRewriter queryRewriter;
@@ -180,7 +186,10 @@ public class CodeHelperApp {
      */
     public Flux<String> doChatWithRag(String message, String chatId) {
         String rewriteMessage = queryRewriter.doQueryRewrite(message);
-
+        SearchRequest searchRequest = SearchRequest.builder()
+                .topK(100)
+                .similarityThreshold(0.2)
+                .build();
         return chatClient.prompt()
                 .user(rewriteMessage)
                 .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, chatId)
@@ -192,7 +201,7 @@ public class CodeHelperApp {
                 //应用RAG检索增强服务（基于云知识库）
 //                .advisors(codeHelperRagCloudAdvisor)
                 //应用RAG检索增强服务(基于pgvector)
-                .advisors(new QuestionAnswerAdvisor(pgVectorStore))
+                .advisors(new RagAdvisor(pgVectorStore,searchRequest,reRankService))
                 //应用自定义RAG检索增强服务（文档查询器+上下文增强器）
 //                .advisors(CodeHelperRagCustomAdvisorFactory.createCodeHelperRagCustomAdvisor(
 //                        codeHelperVectorStore,"高级程序员"

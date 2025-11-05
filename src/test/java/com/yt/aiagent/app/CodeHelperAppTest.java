@@ -4,6 +4,7 @@ import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import reactor.core.publisher.Flux;
 
 import java.util.UUID;
 
@@ -48,8 +49,9 @@ class CodeHelperAppTest {
         String chatId = UUID.randomUUID().toString();
         //第一轮
         String message = "并发编程的注意事项有哪些？";
-//        String answer = codeHelperApp.doChatWithRag(message,chatId);
-//        Assertions.assertNotNull(answer);
+        Flux<String> flux = codeHelperApp.doChatWithRag(message, chatId);
+        flux.doOnNext(System.out::println)  // 每条片段打印
+                .blockLast();                   // 阻塞直到完成，否则测试方法会提前结束
     }
 
     @Test
