@@ -1,5 +1,8 @@
 # code-helper-aiagent
-
+## Agent效果图
+![img.png](picture/img.png)
+![img_1.png](picture/img_1.png)
+![img_1.png](picture/img_2.png)
 ## AI Agent 项目说明
 
 一个基于 Spring Boot 3 的 AI Agent 后端（Java 21 + Maven）与前端（Vite + Vue）工程，集成阿里云灵积 DashScope、Spring AI、LangChain4j、PgVector 等能力，并支持 GitHub Actions 一键部署到服务器（前后端分别部署）。
