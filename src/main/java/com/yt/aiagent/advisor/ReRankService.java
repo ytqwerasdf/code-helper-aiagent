@@ -165,7 +165,7 @@ public class ReRankService {
 
     @Data
     public static class RerankResult {
-        private Integer index;
+        private Integer index;  //index of origin document list
         private RerankDocument document; // 当 return_documents=true 时返回
         private Double relevance_score;   // 0..1 越大越相关
     }

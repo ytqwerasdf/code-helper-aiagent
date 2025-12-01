@@ -6,6 +6,7 @@ import com.yt.aiagent.advisor.ReRankService;
 import com.yt.aiagent.advisor.ReReadingAdvisor;
 import com.yt.aiagent.chatmemory.FileBasedChatMemory;
 import com.yt.aiagent.constant.ConversationSign;
+import com.yt.aiagent.es.ElasticSearchService;
 import com.yt.aiagent.rag.CodeHelperRagCustomAdvisorFactory;
 import com.yt.aiagent.rag.QueryRewriter;
 import jakarta.annotation.Resource;
@@ -22,6 +23,7 @@ import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -54,6 +56,9 @@ public class CodeHelperApp {
 
     @Resource
     private ReRankService reRankService;
+
+    @Autowired(required = false)
+    private ElasticSearchService elasticSearchService;
 
     @Resource
     private QueryRewriter queryRewriter;
@@ -201,7 +206,7 @@ public class CodeHelperApp {
                 //应用RAG检索增强服务（基于云知识库）
 //                .advisors(codeHelperRagCloudAdvisor)
                 //应用RAG检索增强服务(基于pgvector)
-                .advisors(new RagAdvisor(pgVectorStore,searchRequest,reRankService))
+                .advisors(new RagAdvisor(pgVectorStore,searchRequest,reRankService,elasticSearchService))
                 //应用自定义RAG检索增强服务（文档查询器+上下文增强器）
 //                .advisors(CodeHelperRagCustomAdvisorFactory.createCodeHelperRagCustomAdvisor(
 //                        codeHelperVectorStore,"高级程序员"

@@ -15,12 +15,13 @@ package com.yt.aiagent.advisor;/*
  */
 
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import com.yt.aiagent.es.ElasticSearch;
+import com.yt.aiagent.es.ElasticSearchService;
+import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -83,6 +84,8 @@ public class RagAdvisor implements CallAroundAdvisor, StreamAroundAdvisor {
 
     private ReRankService reRankService;
 
+    private ElasticSearchService elasticSearchService;
+
     /**
      * The RagAdvisor retrieves context information from a Vector Store and
      * combines it with the user's text.
@@ -111,9 +114,10 @@ public class RagAdvisor implements CallAroundAdvisor, StreamAroundAdvisor {
      * expression syntax
      * @param reRankService The reRank to make result Accurate
      */
-    public RagAdvisor(VectorStore vectorStore, SearchRequest searchRequest,ReRankService reRankService) {
+    public RagAdvisor(VectorStore vectorStore, SearchRequest searchRequest,ReRankService reRankService,ElasticSearchService elasticSearchService) {
         this(vectorStore, searchRequest, DEFAULT_USER_TEXT_ADVISE);
         this.reRankService = reRankService;
+        this.elasticSearchService = elasticSearchService;
     }
 
     /**
@@ -247,7 +251,19 @@ public class RagAdvisor implements CallAroundAdvisor, StreamAroundAdvisor {
                 .filterExpression(doGetFilterExpression(context))
                 .build();
 
+        //向量库余弦相似度匹配
         List<Document> documents = this.vectorStore.similaritySearch(searchRequestToUse);
+
+        //es关键词匹配
+        List<ElasticSearch> byKeyword = Collections.emptyList();
+        if(elasticSearchService != null){
+            byKeyword = elasticSearchService.findByKeyword(searchRequestToUse.getQuery());
+        }
+        if(!byKeyword.isEmpty()){
+            List<Document> esDocuments = elasticSearchService.convertToDocument(byKeyword);
+            //合并多路检索结果
+            documents.addAll(esDocuments);
+        }
 
         //2.1 Rerank the documents searched
         List<Document> rerankResults = reRankService.rerank(searchRequestToUse.getQuery(), documents, 5, true);

@@ -28,7 +28,7 @@ public class MyLoggerAdvisor implements CallAroundAdvisor, StreamAroundAdvisor {
     }
 
     public int getOrder() {
-        return 0;
+        return 1;
     }
 
     private AdvisedRequest before(AdvisedRequest request) {

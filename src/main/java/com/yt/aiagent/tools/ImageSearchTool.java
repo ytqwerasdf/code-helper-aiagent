@@ -14,6 +14,9 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * 图片搜索工具
+ */
 @Component
 public class ImageSearchTool {
 

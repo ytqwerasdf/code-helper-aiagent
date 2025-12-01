@@ -8,6 +8,7 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.ComponentScan;
 
 import java.util.List;
 import java.util.Map;
@@ -15,6 +16,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
+@ComponentScan(basePackages = "com.yt.aiagent.rag")
 @Slf4j
 class PgVectorStoreConfigTest {
 
@@ -37,19 +39,35 @@ class PgVectorStoreConfigTest {
 //                new Document("The World is Big and Salvation Lurks Around the Corner"),
 //                new Document("You walk forward facing the past and you turn back toward the future.", Map.of("meta2", "meta2")));
         List<Document> documents = codeHelperDocumentLoader.loadMarkdowns();
-        List<Document> limitDocuments = documents.stream().limit(30).toList();
+        for (int i = 0; i < 5; i++) {
+            List<Document> limitDocuments = documents.stream().skip(1000+20*i).limit(20).toList();
+
+            //切分文档
+            List<Document> splitDocuments = myTokenTextSplitter.splitDocuments(limitDocuments);
+            //利用ai补充关键词元信息
+//            List<Document> enrichedDocuments = myKeywordEnricher.enrichDocuments(splitDocuments);
+
+// Add the documents to PGVector
+            pgVectorStore.add(splitDocuments);
+
+// Retrieve documents similar to a query
+            List<Document> results = this.pgVectorStore.similaritySearch(SearchRequest.builder().query("Spring").topK(5).build());
+            log.warn(results.toString());
+            Assertions.assertNotNull(results);
+        }
+       /* List<Document> limitDocuments = documents.stream().skip(80).limit(20).toList();
 
         //切分文档
         List<Document> splitDocuments = myTokenTextSplitter.splitDocuments(limitDocuments);
         //利用ai补充关键词元信息
-        List<Document> enrichedDocuments = myKeywordEnricher.enrichDocuments(splitDocuments);
+//        List<Document> enrichedDocuments = myKeywordEnricher.enrichDocuments(splitDocuments);
 
 // Add the documents to PGVector
-        pgVectorStore.add(enrichedDocuments);
+        pgVectorStore.add(splitDocuments);
 
 // Retrieve documents similar to a query
         List<Document> results = this.pgVectorStore.similaritySearch(SearchRequest.builder().query("Spring").topK(5).build());
         log.info(results.toString());
-        Assertions.assertNotNull(results);
+        Assertions.assertNotNull(results);*/
     }
 }
