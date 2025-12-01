@@ -139,8 +139,8 @@
         >
           <div class="rag-type-header" @click="toggleRAGTypeSelector">
             <label class="rag-type-label">
-              <span class="rag-type-icon">⚙️</span>
-              <span class="rag-type-text">RAG类型选择：</span>
+              <span class="rag-type-icon">📚</span>
+              <span class="rag-type-text">知识库选择：</span>
             </label>
             <span class="collapse-indicator" :class="{ 'collapsed': ragTypeSelectorCollapsed }">
               {{ ragTypeSelectorCollapsed ? '展开' : '收起' }}
@@ -152,9 +152,8 @@
               :disabled="isLoading"
               class="rag-type-select"
             >
-              <option value="memory">基于内存的RAG</option>
-              <option value="local">基于本地数据库的RAG</option>
-              <option value="cloud">基于云端数据库的RAG</option>
+              <option value="java">Java编程知识库</option>
+              <option value="more">更多知识库待添加</option>
             </select>
             <div class="rag-type-description">
               {{ getRAGTypeDescription(ragType) }}
@@ -194,7 +193,7 @@ export default {
       eventSource: null,
       hasCompleted: false,
       useRAG: false,
-      ragType: 'memory',
+      ragType: 'java',
       ragTypeSelectorCollapsed: false,
       touchStartY: 0,
       touchEndY: 0
@@ -399,11 +398,10 @@ export default {
      */
     getRAGTypeDescription(type) {
       const descriptions = {
-        memory: '使用内存中的知识库，响应速度快，适合临时查询',
-        local: '使用本地数据库，数据持久化，适合长期使用',
-        cloud: '使用云端数据库，数据丰富，适合复杂查询'
+        java: '内置精选的 Java 编程知识，涵盖并发、集合、JVM 等常见问题',
+        more: '更多专用知识库正在上线中，敬请期待'
       }
-      return descriptions[type] || descriptions.memory
+      return descriptions[type] || descriptions.java
     },
     
     /**
@@ -413,11 +411,10 @@ export default {
      */
     getRAGTypeName(type) {
       const names = {
-        memory: '内存RAG',
-        local: '本地RAG',
-        cloud: '云端RAG'
+        java: 'Java编程知识库',
+        more: '更多知识库'
       }
-      return names[type] || names.memory
+      return names[type] || names.java
     },
     
     /**
