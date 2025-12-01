@@ -29,7 +29,7 @@ spring:
       read-timeout: 30s
 search:
   elasticsearch:
-    enabled: true   # 需要连 ES 时改成 true
+    enabled: false   # 需要连 ES 时改成 true
 
 springdoc:
   swagger-ui:
