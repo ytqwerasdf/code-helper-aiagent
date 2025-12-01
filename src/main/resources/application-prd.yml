@@ -9,6 +9,10 @@ spring:
       chat:
         options:
           model: qwen-plus
+    mcp:
+      client:
+        stdio:
+          servers-configuration: classpath:mcp-servers.json
 search-api:
   api-key: ${search-api.api-key}
 
