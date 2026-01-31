@@ -238,14 +238,15 @@ export function renderMarkdown(text) {
   // 自动将URL转换为markdown链接
   processedText = autoLinkUrls(processedText)
   
-  // 检测并分离中英文内容
-  const separatedText = separateChineseEnglish(processedText)
-  
-  // 渲染Markdown
-  let html = marked.parse(separatedText)
+  // 先渲染Markdown，保持markdown语法完整性
+  let html = marked.parse(processedText)
   
   // 在HTML中再次处理URL，确保所有URL都被转换为链接
   html = processUrlsInHtml(html)
+  
+  // 注意：中英文分离功能暂时禁用，因为它会破坏markdown语法
+  // 如果需要中英文分离，应该在markdown渲染后进行，但需要更复杂的HTML解析
+  // const separatedText = separateChineseEnglish(processedText)
   
   return html
 }

@@ -164,8 +164,12 @@
   line-height: 1.6;
   color: #333333 !important;
   font-size: 14px;
-  white-space: pre-wrap;
   word-wrap: break-word;
+}
+
+/* 纯文本消息保留换行 - 仅当没有HTML子元素时 */
+.user-bubble .message-text {
+  white-space: pre-wrap;
 }
 
 /* 确保AI消息中的所有文字都是黑色 */
@@ -175,10 +179,44 @@
 .ai-bubble .message-text div,
 .ai-bubble .message-text span,
 .ai-bubble .message-text strong,
-.ai-bubble .message-text em,
-.ai-bubble .message-text code,
-.ai-bubble .message-text pre {
+.ai-bubble .message-text em {
   color: #333333 !important;
+}
+
+/* 代码块样式 */
+.ai-bubble .message-text code {
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 13px;
+  color: #1a1a1a !important;
+  white-space: pre;
+  display: inline-block;
+}
+
+.ai-bubble .message-text pre {
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 1rem;
+  margin: 1rem 0;
+  overflow-x: auto;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #1a1a1a !important;
+  white-space: pre;
+}
+
+.ai-bubble .message-text pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  display: block;
+  white-space: pre;
+  overflow-x: auto;
 }
 
 /* 链接样式 */
@@ -272,57 +310,126 @@
 }
 
 /* Markdown内容样式 */
-.ai-bubble h1,
-.ai-bubble h2,
-.ai-bubble h3,
-.ai-bubble h4,
-.ai-bubble h5,
-.ai-bubble h6 {
+.ai-bubble .message-text h1,
+.ai-bubble .message-text h2,
+.ai-bubble .message-text h3,
+.ai-bubble .message-text h4,
+.ai-bubble .message-text h5,
+.ai-bubble .message-text h6 {
   color: #333333 !important;
-  font-weight: 500;
-  margin: 1rem 0 0.5rem 0;
+  font-weight: 600;
+  margin: 1.5rem 0 0.75rem 0;
+  line-height: 1.4;
 }
 
-.ai-bubble ul,
-.ai-bubble ol {
+.ai-bubble .message-text h1 {
+  font-size: 1.75rem;
+  border-bottom: 2px solid #e5e5e5;
+  padding-bottom: 0.5rem;
+}
+
+.ai-bubble .message-text h2 {
+  font-size: 1.5rem;
+  border-bottom: 1px solid #e5e5e5;
+  padding-bottom: 0.4rem;
+}
+
+.ai-bubble .message-text h3 {
+  font-size: 1.25rem;
+}
+
+.ai-bubble .message-text h4 {
+  font-size: 1.1rem;
+}
+
+.ai-bubble .message-text h5 {
+  font-size: 1rem;
+}
+
+.ai-bubble .message-text h6 {
+  font-size: 0.9rem;
+}
+
+.ai-bubble .message-text ul,
+.ai-bubble .message-text ol {
   color: #333333 !important;
-  margin: 0.5rem 0;
+  margin: 0.75rem 0;
   padding-left: 1.5rem;
 }
 
-.ai-bubble li {
+.ai-bubble .message-text li {
   color: #333333 !important;
-  margin: 0.25rem 0;
+  margin: 0.4rem 0;
+  line-height: 1.6;
 }
 
-.ai-bubble blockquote {
+.ai-bubble .message-text ul li {
+  list-style-type: disc;
+}
+
+.ai-bubble .message-text ol li {
+  list-style-type: decimal;
+}
+
+.ai-bubble .message-text ul ul,
+.ai-bubble .message-text ol ol,
+.ai-bubble .message-text ul ol,
+.ai-bubble .message-text ol ul {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.ai-bubble .message-text blockquote {
   color: #333333 !important;
   border-left: 3px solid #e5e5e5;
-  padding-left: 1rem;
   margin: 1rem 0;
   background: #f9f9f9;
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
   border-radius: 4px;
+  font-style: italic;
 }
 
-.ai-bubble table {
+.ai-bubble .message-text blockquote p {
+  margin: 0.5rem 0;
+}
+
+.ai-bubble .message-text blockquote p:first-child {
+  margin-top: 0;
+}
+
+.ai-bubble .message-text blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+.ai-bubble .message-text table {
   color: #333333 !important;
   border-collapse: collapse;
   width: 100%;
   margin: 1rem 0;
+  display: block;
+  overflow-x: auto;
 }
 
-.ai-bubble th,
-.ai-bubble td {
+.ai-bubble .message-text th,
+.ai-bubble .message-text td {
   color: #333333 !important;
   border: 1px solid #e5e5e5;
-  padding: 0.5rem;
+  padding: 0.75rem;
   text-align: left;
+  vertical-align: top;
 }
 
-.ai-bubble th {
+.ai-bubble .message-text th {
   background: #f9f9f9;
-  font-weight: 500;
+  font-weight: 600;
+}
+
+.ai-bubble .message-text tr:nth-child(even) {
+  background: #fafafa;
+}
+
+.ai-bubble .message-text tr:hover {
+  background: #f5f5f5;
 }
 
 /* 确保文本清晰显示 */
@@ -355,8 +462,43 @@
 
 /* 针对搜索结果等特殊内容的样式 */
 .ai-bubble .message-text p {
-  margin: 0.5rem 0;
+  margin: 0.75rem 0;
   line-height: 1.6;
+}
+
+.ai-bubble .message-text p:first-child {
+  margin-top: 0;
+}
+
+.ai-bubble .message-text p:last-child {
+  margin-bottom: 0;
+}
+
+/* 粗体和斜体样式 */
+.ai-bubble .message-text strong {
+  font-weight: 600;
+  color: #1a1a1a !important;
+}
+
+.ai-bubble .message-text em {
+  font-style: italic;
+  color: #333333 !important;
+}
+
+/* 水平分割线 */
+.ai-bubble .message-text hr {
+  border: none;
+  border-top: 1px solid #e5e5e5;
+  margin: 1.5rem 0;
+}
+
+/* 段落间距 */
+.ai-bubble .message-text > *:first-child {
+  margin-top: 0;
+}
+
+.ai-bubble .message-text > *:last-child {
+  margin-bottom: 0;
 }
 
 .ai-bubble .message-text br {
