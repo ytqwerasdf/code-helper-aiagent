@@ -343,6 +343,10 @@ export default {
       this.isLoading = false
       this.hasCompleted = true
       this.eventSource = null
+      // 流式结束后再注入一次「复制代码」按钮，避免被后续 v-html 更新覆盖
+      this.$nextTick(() => {
+        setTimeout(() => this.injectCopyCodeButtons(), 0)
+      })
     },
     
     /**
@@ -379,7 +383,8 @@ export default {
     injectCopyCodeButtons() {
       const container = this.$refs.messagesContainer
       if (!container) return
-      const pres = container.querySelectorAll('.message-text pre')
+      // 兼容 .message-text 及其子节点内的 pre（markdown 渲染在 .ai-bubble .message-text 内）
+      const pres = container.querySelectorAll('.ai-bubble .message-text pre')
       pres.forEach((pre) => {
         if (pre.closest('.code-block-wrapper')) return
         const wrapper = document.createElement('div')
