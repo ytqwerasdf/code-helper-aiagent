@@ -2,13 +2,14 @@ import { marked } from 'marked'
 
 // 配置 marked（可按需扩展）
 marked.setOptions({
-  breaks: true,
-  gfm: true,
-  // 启用自动链接功能
-  pedantic: false,
-  sanitize: false,
-  smartLists: true,
-  smartypants: false
+  breaks: true,        // 单个换行符也转换为 <br>
+  gfm: true,           // 启用 GitHub Flavored Markdown
+  pedantic: false,     // 不启用严格的 markdown.pl 兼容模式
+  sanitize: false,     // 不清理 HTML（允许 HTML 标签）
+  smartLists: true,    // 使用智能列表
+  smartypants: false,  // 不转换引号和破折号
+  headerIds: false,     // 不自动生成标题 ID
+  mangle: false        // 不混淆邮箱地址
 })
 
 /**
@@ -222,6 +223,41 @@ function processUrlsInHtml(html) {
 }
 
 /**
+ * 修复流式渲染时的不完整 markdown 语法
+ * @param {string} text 输入文本
+ * @returns {string} 修复后的文本
+ */
+function fixIncompleteMarkdown(text) {
+  if (!text) return ''
+  
+  let fixed = text
+  
+  // 修复未闭合的代码块（流式渲染时可能出现）
+  const codeBlockMatches = fixed.match(/```/g)
+  if (codeBlockMatches && codeBlockMatches.length % 2 !== 0) {
+    // 如果代码块标记数量是奇数，说明有未闭合的代码块
+    // 在末尾添加闭合标记（如果最后不是代码块标记）
+    if (!fixed.trim().endsWith('```')) {
+      fixed += '\n```'
+    }
+  }
+  
+  // 修复未闭合的代码行内标记（`）
+  const inlineCodeMatches = fixed.match(/`/g)
+  if (inlineCodeMatches && inlineCodeMatches.length % 2 !== 0) {
+    // 如果行内代码标记数量是奇数，在末尾添加闭合标记
+    if (!fixed.trim().endsWith('`')) {
+      fixed += '`'
+    }
+  }
+  
+  // 修复未闭合的粗体/斜体标记（流式渲染时可能出现）
+  // 注意：这里不自动修复，因为可能是在输入过程中
+  
+  return fixed
+}
+
+/**
  * 将纯文本转为安全的 HTML（Markdown 渲染）
  * @param {string} text 输入 Markdown 文本
  * @returns {string} 渲染后的 HTML
@@ -229,26 +265,43 @@ function processUrlsInHtml(html) {
 export function renderMarkdown(text) {
   if (!text) return ''
   
-  // 预处理：将 \n 转换为实际的换行符
-  let processedText = text.replace(/\\n/g, '\n')
-  
-  // 处理双换行符，确保段落分隔
-  processedText = processedText.replace(/\n\n/g, '\n\n')
-  
-  // 自动将URL转换为markdown链接
-  processedText = autoLinkUrls(processedText)
-  
-  // 先渲染Markdown，保持markdown语法完整性
-  let html = marked.parse(processedText)
-  
-  // 在HTML中再次处理URL，确保所有URL都被转换为链接
-  html = processUrlsInHtml(html)
-  
-  // 注意：中英文分离功能暂时禁用，因为它会破坏markdown语法
-  // 如果需要中英文分离，应该在markdown渲染后进行，但需要更复杂的HTML解析
-  // const separatedText = separateChineseEnglish(processedText)
-  
-  return html
+  try {
+    // 预处理：将 \n 转换为实际的换行符
+    let processedText = text.replace(/\\n/g, '\n')
+    
+    // 处理双换行符，确保段落分隔
+    processedText = processedText.replace(/\n\n/g, '\n\n')
+    
+    // 修复流式渲染时可能的不完整 markdown 语法
+    processedText = fixIncompleteMarkdown(processedText)
+    
+    // 自动将URL转换为markdown链接
+    processedText = autoLinkUrls(processedText)
+    
+    // 先渲染Markdown，保持markdown语法完整性
+    let html = marked.parse(processedText)
+    
+    // 在HTML中再次处理URL，确保所有URL都被转换为链接
+    html = processUrlsInHtml(html)
+    
+    // 注意：中英文分离功能暂时禁用，因为它会破坏markdown语法
+    // 如果需要中英文分离，应该在markdown渲染后进行，但需要更复杂的HTML解析
+    // const separatedText = separateChineseEnglish(processedText)
+    
+    return html
+  } catch (error) {
+    // 如果 markdown 解析失败，返回转义的纯文本
+    console.error('Markdown 渲染失败:', error)
+    // 转义 HTML 特殊字符，避免 XSS
+    const escaped = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/\n/g, '<br>')
+    return escaped
+  }
 }
 
 

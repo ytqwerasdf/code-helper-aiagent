@@ -287,6 +287,7 @@ export default {
         // 预处理换行符
         const processedData = data.replace(/\\n/g, '\n')
         target.content += processedData
+        // 立即渲染，renderMarkdown 内部会处理不完整的 markdown 语法
         target.html = renderMarkdown(target.content)
       } else {
         // 否则创建新的AI消息
