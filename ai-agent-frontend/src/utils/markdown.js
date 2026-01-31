@@ -267,6 +267,34 @@ function fixIncompleteMarkdown(text) {
 }
 
 /**
+ * 预处理文本，确保标题格式正确
+ * @param {string} text 输入文本
+ * @returns {string} 处理后的文本
+ */
+function preprocessHeadings(text) {
+  if (!text) return ''
+  
+  let processed = text
+  
+  // 修复可能被转义的标题标记（如 \### 应该变成 ###）
+  processed = processed.replace(/\\(#{1,6})\s/g, '$1 ')
+  
+  // 确保标题前有换行符（除非是文本开头或已经是换行符）
+  // 匹配：非换行符 + 标题标记（# 到 ######）+ 空格 + 标题文本
+  processed = processed.replace(/([^\n\r])(#{1,6}\s+[^\n\r]+)/g, '$1\n$2')
+  
+  // 确保标题行独立（标题后应该有换行符，除非已经是最后一行）
+  // 这个处理要小心，不要破坏标题后的内容
+  // 标题格式：### 标题文本，后面应该跟换行符或文本结束
+  
+  // 修复可能被错误处理的标题（标题标记后没有空格的情况）
+  // 标准格式：### 标题，如果写成 ###标题，需要修复
+  processed = processed.replace(/(#{1,6})([^\s#\n\r])/g, '$1 $2')
+  
+  return processed
+}
+
+/**
  * 将纯文本转为安全的 HTML（Markdown 渲染）
  * @param {string} text 输入 Markdown 文本
  * @returns {string} 渲染后的 HTML
@@ -277,6 +305,9 @@ export function renderMarkdown(text) {
   try {
     // 预处理：将 \n 转换为实际的换行符
     let processedText = text.replace(/\\n/g, '\n')
+    
+    // 预处理标题格式，确保正确解析
+    processedText = preprocessHeadings(processedText)
     
     // 处理双换行符，确保段落分隔
     processedText = processedText.replace(/\n\n/g, '\n\n')
