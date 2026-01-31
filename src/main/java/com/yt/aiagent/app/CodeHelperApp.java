@@ -3,20 +3,15 @@ package com.yt.aiagent.app;
 import com.yt.aiagent.advisor.MyLoggerAdvisor;
 import com.yt.aiagent.advisor.RagAdvisor;
 import com.yt.aiagent.advisor.ReRankService;
-import com.yt.aiagent.advisor.ReReadingAdvisor;
 import com.yt.aiagent.chatmemory.FileBasedChatMemory;
 import com.yt.aiagent.constant.ConversationSign;
 import com.yt.aiagent.es.ElasticSearchService;
-import com.yt.aiagent.rag.CodeHelperRagCustomAdvisorFactory;
 import com.yt.aiagent.rag.QueryRewriter;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
-import org.springframework.ai.chat.client.advisor.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
-import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.memory.InMemoryChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.tool.ToolCallback;
@@ -30,9 +25,8 @@ import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 
 import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_CONVERSATION_ID_KEY;
 import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_RETRIEVE_SIZE_KEY;
@@ -44,11 +38,13 @@ public class CodeHelperApp {
 
     private final ChatClient chatClient;
 
-    //AI知识库问答功能
+    //AI知识库问答功能（预留，当前使用 pgVectorStore + RagAdvisor）
     @Resource
+    @SuppressWarnings("unused")
     private VectorStore codeHelperVectorStore;
 
     @Resource
+    @SuppressWarnings("unused")
     private Advisor codeHelperRagCloudAdvisor;
 
     @Resource
@@ -111,11 +107,15 @@ public class CodeHelperApp {
             "免责声明：每次输出结果末尾需附带（可简化表述）：“本助手提供的代码、方案仅供参考，实际使用前请务必充分测试（如验证功能正确性、兼容性、安全性）”。";
 
 
+    /** RAG 模式专用：强调仅基于知识库上下文回答，严禁使用外部知识 */
+    private static final String RAG_SYSTEM_PROMPT_APPENDIX = "\n\n【RAG 模式约束】当前为知识库检索增强模式：你只能根据检索到的上下文回答问题，严禁使用训练数据或外部知识补充。若上下文中无相关信息，必须明确告知用户。";
+
+    private static final String RAG_SYSTEM_PROMPT = SYSTEM_PROMPT + RAG_SYSTEM_PROMPT_APPENDIX;
+
     /**
-     * 初始化  ChatClient
+     * 初始化 ChatClient
      *
-     * @param dashscopeChatModel
-     * @param dashscopeChatModel
+     * @param dashscopeChatModel 大模型实例，用于构建对话客户端
      */
     public CodeHelperApp(ChatModel dashscopeChatModel) {
         //初始化基于文件的会话记忆
@@ -139,9 +139,9 @@ public class CodeHelperApp {
     /**
      * ai对话，多轮会话记忆
      *
-     * @param message
-     * @param chatId
-     * @return
+     * @param message 用户输入消息
+     * @param chatId  会话ID
+     * @return AI 回复文本
      */
     public String doChat(String message, String chatId) {
         ChatResponse chatResponse = chatClient.prompt()
@@ -158,9 +158,9 @@ public class CodeHelperApp {
     /**
      * ai对话，多轮会话记忆(SSE流式传输)
      *
-     * @param message
-     * @param chatId
-     * @return
+     * @param message 用户输入消息
+     * @param chatId  会话ID
+     * @return 流式回复内容
      */
     public Flux<String> doChatByStream(String message, String chatId) {
 
@@ -185,17 +185,18 @@ public class CodeHelperApp {
     /**
      * 和RAG知识库进行对话
      *
-     * @param message
-     * @param chatId
-     * @return
+     * @param message 用户输入消息
+     * @param chatId  会话ID
+     * @return 流式回复内容
      */
     public Flux<String> doChatWithRag(String message, String chatId) {
         String rewriteMessage = queryRewriter.doQueryRewrite(message);
         SearchRequest searchRequest = SearchRequest.builder()
                 .topK(100)
-                .similarityThreshold(0.2)
+                .similarityThreshold(0.5)
                 .build();
         return chatClient.prompt()
+                .system(RAG_SYSTEM_PROMPT)
                 .user(rewriteMessage)
                 .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, chatId)
                         .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 10))
@@ -215,16 +216,16 @@ public class CodeHelperApp {
                 .content();
     }
 
-    record CodeReport(String title, List<String> solutions) {
-
+    /** 报告结构化输出 */
+    public record CodeReport(String title, List<String> solutions) {
     }
 
     /**
      * 报告功能，结构化输出
      *
-     * @param message
-     * @param chatId
-     * @return
+     * @param message 用户输入消息
+     * @param chatId  会话ID
+     * @return 包含标题和解决方案列表的代码报告
      */
     public CodeReport doChatWithReport(String message, String chatId) {
         CodeReport codeReport = chatClient
@@ -247,9 +248,9 @@ public class CodeHelperApp {
     /**
      * 报告功能，调用本地Tools
      *
-     * @param message
-     * @param chatId
-     * @return
+     * @param message 用户输入消息
+     * @param chatId  会话ID
+     * @return AI 回复文本
      */
     public String doChatWithTools(String message, String chatId) {
         ChatResponse chatResponse = chatClient
@@ -273,9 +274,9 @@ public class CodeHelperApp {
     /**
      * 报告功能，调用MCP服务
      *
-     * @param message
-     * @param chatId
-     * @return
+     * @param message 用户输入消息
+     * @param chatId  会话ID
+     * @return AI 回复文本或超时/异常时的降级提示
      */
     public String doChatWithMCP(String message, String chatId) {
         return Mono.fromCallable(() -> {

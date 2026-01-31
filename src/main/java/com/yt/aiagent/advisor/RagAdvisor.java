@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
 
 import com.yt.aiagent.es.ElasticSearch;
 import com.yt.aiagent.es.ElasticSearchService;
-import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -32,13 +31,16 @@ import org.springframework.ai.chat.client.advisor.api.CallAroundAdvisor;
 import org.springframework.ai.chat.client.advisor.api.CallAroundAdvisorChain;
 import org.springframework.ai.chat.client.advisor.api.StreamAroundAdvisor;
 import org.springframework.ai.chat.client.advisor.api.StreamAroundAdvisorChain;
+import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.Filter;
 import org.springframework.ai.vectorstore.filter.FilterExpressionTextParser;
+import org.springframework.lang.NonNull;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -57,17 +59,20 @@ public class RagAdvisor implements CallAroundAdvisor, StreamAroundAdvisor {
 
     public static final String FILTER_EXPRESSION = "qa_filter_expression";
 
+    /** 检索结果为空时直接返回，不调用 LLM */
+    public static final String QA_CONTEXT_EMPTY = "qa_context_empty";
+
+    /** 知识库无相关信息的固定回复 */
+    private static final String NO_CONTEXT_REPLY = "知识库中暂无与您问题相关的资料，请尝试换一种方式提问，或联系管理员补充知识库内容。";
+
     private static final String DEFAULT_USER_TEXT_ADVISE = """
 
-			Context information is below, surrounded by ---------------------
-
+			以下是从知识库检索到的上下文，请仅基于该上下文回答，严禁使用上下文以外的任何知识。
 			---------------------
 			{question_answer_context}
 			---------------------
 
-			Given the context and provided history information and not prior knowledge,
-			reply to the user comment. If the answer is not in the context, inform
-			the user that you can't answer the question.
+			规则：你只能根据上述上下文内容回答问题。如果答案不在上下文中，必须明确告知用户"无法从知识库中找到相关信息"，不得编造或使用训练数据中的知识补充回答。
 			""";
 
     private static final int DEFAULT_ORDER = 0;
@@ -91,6 +96,7 @@ public class RagAdvisor implements CallAroundAdvisor, StreamAroundAdvisor {
      * combines it with the user's text.
      * @param vectorStore The vector store to use
      */
+    @SuppressWarnings("unused")
     public RagAdvisor(VectorStore vectorStore) {
         this(vectorStore, SearchRequest.builder().build(), DEFAULT_USER_TEXT_ADVISE);
     }
@@ -101,6 +107,7 @@ public class RagAdvisor implements CallAroundAdvisor, StreamAroundAdvisor {
      * @param vectorStore The vector store to use
      * @param reRankService The reRank to make result Accurate
      */
+    @SuppressWarnings("unused")
     public RagAdvisor(VectorStore vectorStore,ReRankService reRankService) {
         this(vectorStore, SearchRequest.builder().build(), DEFAULT_USER_TEXT_ADVISE);
         this.reRankService = reRankService;
@@ -127,6 +134,7 @@ public class RagAdvisor implements CallAroundAdvisor, StreamAroundAdvisor {
      * @param searchRequest The search request defined using the portable filter
      * expression syntax
      */
+    @SuppressWarnings("unused")
     public RagAdvisor(VectorStore vectorStore, SearchRequest searchRequest) {
         this(vectorStore, searchRequest, DEFAULT_USER_TEXT_ADVISE);
     }
@@ -205,9 +213,14 @@ public class RagAdvisor implements CallAroundAdvisor, StreamAroundAdvisor {
     }
 
     @Override
-    public AdvisedResponse aroundCall(AdvisedRequest advisedRequest, CallAroundAdvisorChain chain) {
+    @NonNull
+    public AdvisedResponse aroundCall(@NonNull AdvisedRequest advisedRequest, @NonNull CallAroundAdvisorChain chain) {
 
         AdvisedRequest advisedRequest2 = before(advisedRequest);
+
+        if (Boolean.TRUE.equals(advisedRequest2.adviseContext().get(QA_CONTEXT_EMPTY))) {
+            return buildEmptyContextResponse(advisedRequest2);
+        }
 
         AdvisedResponse advisedResponse = chain.nextAroundCall(advisedRequest2);
 
@@ -215,19 +228,20 @@ public class RagAdvisor implements CallAroundAdvisor, StreamAroundAdvisor {
     }
 
     @Override
-    public Flux<AdvisedResponse> aroundStream(AdvisedRequest advisedRequest, StreamAroundAdvisorChain chain) {
+    @NonNull
+    public Flux<AdvisedResponse> aroundStream(@NonNull AdvisedRequest advisedRequest, @NonNull StreamAroundAdvisorChain chain) {
 
         // This can be executed by both blocking and non-blocking Threads
-        // E.g. a command line or Tomcat blocking Thread implementation
-        // or by a WebFlux dispatch in a non-blocking manner.
-        Flux<AdvisedResponse> advisedResponses = (this.protectFromBlocking) ?
-                // @formatter:off
-                Mono.just(advisedRequest)
-                        .publishOn(Schedulers.boundedElastic())
-                        .map(this::before)
-                        .flatMapMany(request -> chain.nextAroundStream(request))
-                : chain.nextAroundStream(before(advisedRequest));
-        // @formatter:on
+        Mono<AdvisedRequest> requestMono = (this.protectFromBlocking)
+                ? Mono.just(advisedRequest).publishOn(Schedulers.boundedElastic()).map(this::before)
+                : Mono.just(before(advisedRequest));
+
+        Flux<AdvisedResponse> advisedResponses = requestMono.flatMapMany(request -> {
+            if (Boolean.TRUE.equals(request.adviseContext().get(QA_CONTEXT_EMPTY))) {
+                return Flux.just(buildEmptyContextResponse(request));
+            }
+            return chain.nextAroundStream(request);
+        });
 
         return advisedResponses.map(ar -> {
             if (onFinishReason().test(ar)) {
@@ -265,8 +279,10 @@ public class RagAdvisor implements CallAroundAdvisor, StreamAroundAdvisor {
             documents.addAll(esDocuments);
         }
 
-        //2.1 Rerank the documents searched
-        List<Document> rerankResults = reRankService.rerank(searchRequestToUse.getQuery(), documents, 5, true);
+        //2.1 Rerank the documents searched（documents 为空时跳过 rerank，避免断言异常）
+        List<Document> rerankResults = documents.isEmpty()
+                ? Collections.emptyList()
+                : reRankService.rerank(searchRequestToUse.getQuery(), documents, 5, true);
 
         // 3. Create the context from the documents.
         context.put(RETRIEVED_DOCUMENTS, rerankResults);
@@ -275,17 +291,28 @@ public class RagAdvisor implements CallAroundAdvisor, StreamAroundAdvisor {
                 .map(Document::getText)
                 .collect(Collectors.joining(System.lineSeparator()));
 
+        // 3.1 上下文为空时标记，供 aroundCall/aroundStream 短路返回
+        if (!StringUtils.hasText(documentContext)) {
+            context.put(QA_CONTEXT_EMPTY, Boolean.TRUE);
+        }
+
         // 4. Advise the user parameters.
         Map<String, Object> advisedUserParams = new HashMap<>(request.userParams());
         advisedUserParams.put("question_answer_context", documentContext);
 
-        AdvisedRequest advisedRequest = AdvisedRequest.from(request)
+        return AdvisedRequest.from(request)
                 .userText(advisedUserText)
                 .userParams(advisedUserParams)
                 .adviseContext(context)
                 .build();
+    }
 
-        return advisedRequest;
+    /** 上下文为空时构建固定回复，不调用 LLM */
+    private AdvisedResponse buildEmptyContextResponse(AdvisedRequest request) {
+        ChatResponse chatResponse = new ChatResponse(Collections.singletonList(
+                new Generation(new AssistantMessage(NO_CONTEXT_REPLY))
+        ));
+        return new AdvisedResponse(chatResponse, request.adviseContext());
     }
 
     private AdvisedResponse after(AdvisedResponse advisedResponse) {
@@ -308,10 +335,8 @@ public class RagAdvisor implements CallAroundAdvisor, StreamAroundAdvisor {
         return advisedResponse -> advisedResponse.response()
                 .getResults()
                 .stream()
-                .filter(result -> result != null && result.getMetadata() != null
-                        && StringUtils.hasText(result.getMetadata().getFinishReason()))
-                .findFirst()
-                .isPresent();
+                .anyMatch(result -> result != null && result.getMetadata() != null
+                        && StringUtils.hasText(result.getMetadata().getFinishReason()));
     }
 
     public static final class Builder {
@@ -331,28 +356,36 @@ public class RagAdvisor implements CallAroundAdvisor, StreamAroundAdvisor {
             this.vectorStore = vectorStore;
         }
 
+        @SuppressWarnings("unused")
         public Builder searchRequest(SearchRequest searchRequest) {
             Assert.notNull(searchRequest, "The searchRequest must not be null!");
             this.searchRequest = searchRequest;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder userTextAdvise(String userTextAdvise) {
             Assert.hasText(userTextAdvise, "The userTextAdvise must not be empty!");
             this.userTextAdvise = userTextAdvise;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder protectFromBlocking(boolean protectFromBlocking) {
             this.protectFromBlocking = protectFromBlocking;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder order(int order) {
             this.order = order;
             return this;
         }
 
+        /**
+         * 构建 RagAdvisor 实例
+         * @return 配置好的 RagAdvisor
+         */
         public RagAdvisor build() {
             return new RagAdvisor(this.vectorStore, this.searchRequest, this.userTextAdvise,
                     this.protectFromBlocking, this.order);
