@@ -193,9 +193,10 @@
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
   font-size: 0.9em;
   color: #1a1a1a !important;
-  white-space: nowrap;
+  white-space: normal;
   display: inline;
-  word-break: break-all;
+  word-break: break-word;
+  line-height: 1.4;
 }
 
 /* 代码块容器 */
@@ -453,6 +454,29 @@
   word-wrap: break-word;
 }
 
+/* 表格中的代码块样式 - 确保正确显示 */
+.ai-bubble .message-text td code,
+.ai-bubble .message-text th code {
+  background: #f5f5f5 !important;
+  border: 1px solid #e0e0e0 !important;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+  font-size: 0.9em;
+  color: #1a1a1a !important;
+  white-space: normal;
+  display: inline;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+/* 表格中的代码块不应该有 nowrap */
+.ai-bubble .message-text td code:not(pre code),
+.ai-bubble .message-text th code:not(pre code) {
+  white-space: normal;
+  word-break: break-all;
+}
+
 .ai-bubble .message-text th {
   background: #f9f9f9;
   font-weight: 600;
@@ -464,6 +488,39 @@
 
 .ai-bubble .message-text tr:hover {
   background: #f5f5f5;
+}
+
+/* 确保表格单元格中的内容正确换行 */
+.ai-bubble .message-text td p,
+.ai-bubble .message-text th p {
+  margin: 0.25rem 0;
+}
+
+.ai-bubble .message-text td p:first-child,
+.ai-bubble .message-text th p:first-child {
+  margin-top: 0;
+}
+
+.ai-bubble .message-text td p:last-child,
+.ai-bubble .message-text th p:last-child {
+  margin-bottom: 0;
+}
+
+/* 表格中的列表样式 */
+.ai-bubble .message-text td ul,
+.ai-bubble .message-text td ol,
+.ai-bubble .message-text th ul,
+.ai-bubble .message-text th ol {
+  margin: 0.25rem 0;
+  padding-left: 1.25rem;
+}
+
+/* 表格中的粗体、斜体等样式 */
+.ai-bubble .message-text td strong,
+.ai-bubble .message-text td em,
+.ai-bubble .message-text th strong,
+.ai-bubble .message-text th em {
+  color: #333333 !important;
 }
 
 /* 确保表格在小屏幕上可以横向滚动 */

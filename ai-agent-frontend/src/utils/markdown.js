@@ -3,12 +3,12 @@ import { marked } from 'marked'
 // 配置 marked（可按需扩展）
 marked.setOptions({
   breaks: true,        // 单个换行符也转换为 <br>
-  gfm: true,           // 启用 GitHub Flavored Markdown
+  gfm: true,           // 启用 GitHub Flavored Markdown（支持表格、任务列表等）
   pedantic: false,     // 不启用严格的 markdown.pl 兼容模式
   sanitize: false,     // 不清理 HTML（允许 HTML 标签）
   smartLists: true,    // 使用智能列表
   smartypants: false,  // 不转换引号和破折号
-  headerIds: false,     // 不自动生成标题 ID
+  headerIds: false,    // 不自动生成标题 ID
   mangle: false        // 不混淆邮箱地址
 })
 
@@ -233,26 +233,35 @@ function fixIncompleteMarkdown(text) {
   let fixed = text
   
   // 修复未闭合的代码块（流式渲染时可能出现）
-  const codeBlockMatches = fixed.match(/```/g)
-  if (codeBlockMatches && codeBlockMatches.length % 2 !== 0) {
-    // 如果代码块标记数量是奇数，说明有未闭合的代码块
-    // 在末尾添加闭合标记（如果最后不是代码块标记）
-    if (!fixed.trim().endsWith('```')) {
+  // 注意：需要排除代码块内部的内容
+  const codeBlockRegex = /```[\s\S]*?```/g
+  const codeBlockMatches = fixed.match(codeBlockRegex)
+  const codeBlockCount = codeBlockMatches ? codeBlockMatches.length : 0
+  const allCodeBlockMarkers = (fixed.match(/```/g) || []).length
+  
+  // 如果代码块标记数量是奇数，说明有未闭合的代码块
+  if (allCodeBlockMarkers % 2 !== 0 && !fixed.trim().endsWith('```')) {
+    // 检查最后是否在代码块中（简单检查）
+    const lastCodeBlockIndex = fixed.lastIndexOf('```')
+    const afterLastMarker = fixed.substring(lastCodeBlockIndex + 3)
+    // 如果后面没有另一个 ```，说明未闭合
+    if (!afterLastMarker.includes('```')) {
       fixed += '\n```'
     }
   }
   
-  // 修复未闭合的代码行内标记（`）
-  const inlineCodeMatches = fixed.match(/`/g)
-  if (inlineCodeMatches && inlineCodeMatches.length % 2 !== 0) {
-    // 如果行内代码标记数量是奇数，在末尾添加闭合标记
-    if (!fixed.trim().endsWith('`')) {
+  // 修复未闭合的行内代码标记（`）
+  // 需要排除代码块中的内容
+  const tempText = fixed.replace(codeBlockRegex, '')
+  const inlineCodeMatches = (tempText.match(/`/g) || []).length
+  if (inlineCodeMatches % 2 !== 0 && !fixed.trim().endsWith('`')) {
+    // 检查是否在行内代码中
+    const lastInlineIndex = tempText.lastIndexOf('`')
+    const afterLastInline = tempText.substring(lastInlineIndex + 1)
+    if (!afterLastInline.includes('`')) {
       fixed += '`'
     }
   }
-  
-  // 修复未闭合的粗体/斜体标记（流式渲染时可能出现）
-  // 注意：这里不自动修复，因为可能是在输入过程中
   
   return fixed
 }
