@@ -20,8 +20,8 @@
       </div>
     </div>
     
-    <!-- 聊天消息区域 -->
-    <div class="chat-messages" ref="messagesContainer">
+    <!-- 聊天消息区域：用户向上滚动时不再自动跟到底部 -->
+    <div class="chat-messages" ref="messagesContainer" @scroll="onMessagesScroll">
       <div v-for="(message, index) in messages" :key="index" :class="['message', message.type]" 
            :style="{ animationDelay: `${index * 0.1}s` }">
         <div class="message-content" v-if="message.type === 'user'">
@@ -196,7 +196,9 @@ export default {
       ragType: 'java',
       ragTypeSelectorCollapsed: false,
       touchStartY: 0,
-      touchEndY: 0
+      touchEndY: 0,
+      /** 用户是否在底部附近（未向上滑动），用于决定新内容到来时是否自动滚到底部 */
+      userAtBottom: true
     }
   },
   
@@ -236,9 +238,10 @@ export default {
         content: message
       })
       
-      // 滚动到底部
+      // 用户刚发送，跟随新回复到底部
+      this.userAtBottom = true
       this.$nextTick(() => {
-        this.scrollToBottom()
+        this.scrollToBottom(true)
       })
       
       // 开始AI响应
@@ -301,9 +304,9 @@ export default {
         this.messages.push(aiMsg)
       }
       
-      // 滚动到底部
+      // 仅当用户仍在底部附近时才自动滚到底部，避免打断向上阅读
       this.$nextTick(() => {
-        this.scrollToBottom()
+        this.scrollToBottom(false)
       })
     },
     
@@ -327,7 +330,7 @@ export default {
         type: 'ai',
         content: '抱歉，连接已断开，请稍后重试或刷新页面。'
       })
-      this.scrollToBottom()
+      this.scrollToBottom(true)
     },
     
     /**
@@ -341,13 +344,25 @@ export default {
     },
     
     /**
-     * 滚动到消息底部
+     * 消息区域滚动时更新「是否在底部」状态
      */
-    scrollToBottom() {
+    onMessagesScroll() {
       const container = this.$refs.messagesContainer
-      if (container) {
-        container.scrollTop = container.scrollHeight
-      }
+      if (!container) return
+      const threshold = 80
+      const atBottom = container.scrollHeight - container.scrollTop - container.clientHeight <= threshold
+      this.userAtBottom = atBottom
+    },
+    /**
+     * 滚动到消息底部
+     * @param {boolean} force - 为 true 时强制滚到底部（如发送消息、错误提示）；为 false 时仅当用户原本在底部才滚动
+     */
+    scrollToBottom(force = false) {
+      const container = this.$refs.messagesContainer
+      if (!container) return
+      if (!force && !this.userAtBottom) return
+      container.scrollTop = container.scrollHeight
+      this.userAtBottom = true
     },
     /**
      * 复制指定文本
@@ -389,7 +404,7 @@ export default {
         type: 'ai',
         content: '⏹️ 回答已停止'
       })
-      this.scrollToBottom()
+      this.scrollToBottom(true)
     },
     
     /**
