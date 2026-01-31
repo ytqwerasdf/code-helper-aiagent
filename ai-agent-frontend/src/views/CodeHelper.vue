@@ -211,7 +211,6 @@ export default {
       type: 'ai',
       content: '您好！我是AI编程助手，有什么编程问题可以帮您解决吗？'
     })
-    this.$nextTick(() => this.injectCopyCodeButtons())
   },
   
   beforeUnmount() {
@@ -305,10 +304,9 @@ export default {
         this.messages.push(aiMsg)
       }
       
-      // 仅当用户仍在底部附近时才自动滚到底部，避免打断向上阅读；并为代码块注入复制按钮
+      // 仅当用户仍在底部附近时才自动滚到底部，避免打断向上阅读
       this.$nextTick(() => {
         this.scrollToBottom(false)
-        this.injectCopyCodeButtons()
       })
     },
     
@@ -343,10 +341,6 @@ export default {
       this.isLoading = false
       this.hasCompleted = true
       this.eventSource = null
-      // 流式结束后再注入一次「复制代码」按钮，避免被后续 v-html 更新覆盖
-      this.$nextTick(() => {
-        setTimeout(() => this.injectCopyCodeButtons(), 0)
-      })
     },
     
     /**
@@ -376,33 +370,6 @@ export default {
     async copy(text) {
       await copyText(text)
       showToast('复制成功')
-    },
-    /**
-     * 为消息区域内所有代码块注入「复制代码」按钮
-     */
-    injectCopyCodeButtons() {
-      const container = this.$refs.messagesContainer
-      if (!container) return
-      // 兼容 .message-text 及其子节点内的 pre（markdown 渲染在 .ai-bubble .message-text 内）
-      const pres = container.querySelectorAll('.ai-bubble .message-text pre')
-      pres.forEach((pre) => {
-        if (pre.closest('.code-block-wrapper')) return
-        const wrapper = document.createElement('div')
-        wrapper.className = 'code-block-wrapper'
-        const btn = document.createElement('button')
-        btn.type = 'button'
-        btn.className = 'copy-code-btn'
-        btn.textContent = '复制代码'
-        btn.addEventListener('click', async () => {
-          const codeEl = pre.querySelector('code')
-          const text = codeEl ? codeEl.textContent : pre.textContent
-          await copyText(text || '')
-          showToast('复制成功')
-        })
-        pre.parentNode.insertBefore(wrapper, pre)
-        wrapper.appendChild(pre)
-        wrapper.appendChild(btn)
-      })
     },
     /**
      * 停止当前 SSE 流

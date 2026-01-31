@@ -12,6 +12,23 @@ marked.setOptions({
   mangle: false        // 不混淆邮箱地址
 })
 
+// 自定义渲染器：为代码块添加「复制代码」按钮
+const renderer = new marked.Renderer()
+const originalCodeRenderer = renderer.code.bind(renderer)
+
+renderer.code = function(code, infostring, escaped) {
+  // 调用原始渲染器得到 <pre><code>...</code></pre>
+  const html = originalCodeRenderer(code, infostring, escaped)
+  // 包装并添加复制按钮（按钮 onclick 调用全局函数）
+  return `<div class="code-block-wrapper">
+    ${html}
+    <button type="button" class="copy-code-btn" onclick="window.__copyCodeBlock(this)">复制代码</button>
+  </div>`
+}
+
+marked.use({ renderer })
+
+
 /**
  * 检测文本是否包含中英文混合内容
  * @param {string} text 输入文本

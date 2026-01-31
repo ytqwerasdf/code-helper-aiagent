@@ -16,6 +16,9 @@
 </template>
 
 <script>
+import { copyText } from './utils/clipboard.js'
+import { showToast } from './utils/toast.js'
+
 export default {
   name: 'App',
   
@@ -27,6 +30,23 @@ export default {
   
   mounted() {
     this.initSEO()
+    
+    // 注册全局「复制代码块」函数，供 markdown 渲染的按钮调用
+    window.__copyCodeBlock = async (btn) => {
+      try {
+        const wrapper = btn.closest('.code-block-wrapper')
+        if (!wrapper) return
+        const pre = wrapper.querySelector('pre')
+        if (!pre) return
+        const codeEl = pre.querySelector('code')
+        const text = codeEl ? codeEl.textContent : pre.textContent
+        await copyText(text || '')
+        showToast('复制成功')
+      } catch (error) {
+        console.error('复制代码失败:', error)
+        showToast('复制失败')
+      }
+    }
     
     // 模拟加载时间
     setTimeout(() => {
